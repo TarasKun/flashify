@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Flashify maskable icon</title>
+  <desc id="desc">A centered flashcard mark with safe padding for maskable app icons.</desc>
+  <rect width="512" height="512" fill="#2563eb"/>
+  <rect x="132" y="132" width="248" height="248" rx="44" fill="#ffffff"/>
+  <path d="M188 228h136M188 280h96" stroke="#171a16" stroke-width="26" stroke-linecap="round"/>
+  <path d="M306 332l28 28 62-74" fill="none" stroke="#16a34a" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

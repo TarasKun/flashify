@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Flashify icon</title>
+  <desc id="desc">A blue flashcard with a green learned marker.</desc>
+  <rect width="512" height="512" rx="112" fill="#f7f8f5"/>
+  <rect x="112" y="112" width="288" height="288" rx="48" fill="#ffffff" stroke="#2563eb" stroke-width="28"/>
+  <path d="M176 218h160M176 278h118" stroke="#171a16" stroke-width="28" stroke-linecap="round"/>
+  <path d="M318 334l34 34 72-86" fill="none" stroke="#16a34a" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
