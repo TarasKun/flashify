@@ -2,6 +2,8 @@
 
 import {
   ArrowLeft,
+  Check,
+  X,
   FileInput,
   Pencil,
   Play,
@@ -27,6 +29,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [deckName, setDeckName] = useState("");
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState("");
+  const [editingAnswer, setEditingAnswer] = useState("");
 
   const loadDeck = useCallback(async () => {
     setIsLoading(true);
@@ -87,6 +95,64 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
     await storage.deleteDeck(deck.id);
     router.push("/");
+  }
+
+  async function createCard(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const question = newQuestion.trim();
+    const answer = newAnswer.trim();
+
+    if (!deck || !question || !answer) {
+      return;
+    }
+
+    await storage.createCard({
+      deckId: deck.id,
+      question,
+      answer,
+    });
+    setNewQuestion("");
+    setNewAnswer("");
+    setIsAddingCard(false);
+    await loadDeck();
+  }
+
+  function startEditingCard(card: Card) {
+    setEditingCardId(card.id);
+    setEditingQuestion(card.question);
+    setEditingAnswer(card.answer);
+  }
+
+  async function updateCard(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const question = editingQuestion.trim();
+    const answer = editingAnswer.trim();
+
+    if (!editingCardId || !question || !answer) {
+      return;
+    }
+
+    await storage.updateCard(editingCardId, {
+      question,
+      answer,
+    });
+    setEditingCardId(null);
+    setEditingQuestion("");
+    setEditingAnswer("");
+    await loadDeck();
+  }
+
+  async function deleteCard(card: Card) {
+    const shouldDelete = window.confirm(`Delete "${card.question}"?`);
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    await storage.deleteCard(card.id);
+    await loadDeck();
   }
 
   if (isLoading) {
@@ -198,6 +264,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       <section className="grid grid-cols-2 gap-3">
         <button
           className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
+          onClick={() => setIsAddingCard((currentValue) => !currentValue)}
           type="button"
         >
           <Plus aria-hidden="true" size={22} strokeWidth={2.3} />
@@ -211,6 +278,63 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <span>Import text</span>
         </button>
       </section>
+
+      {isAddingCard ? (
+        <form
+          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+          onSubmit={createCard}
+        >
+          <div>
+            <label
+              className="text-sm font-medium text-[var(--app-text-muted)]"
+              htmlFor="new-card-question"
+            >
+              Question
+            </label>
+            <textarea
+              className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              id="new-card-question"
+              onChange={(event) => setNewQuestion(event.target.value)}
+              placeholder="What is a DTO?"
+              value={newQuestion}
+            />
+          </div>
+
+          <div>
+            <label
+              className="text-sm font-medium text-[var(--app-text-muted)]"
+              htmlFor="new-card-answer"
+            >
+              Answer
+            </label>
+            <textarea
+              className="mt-2 min-h-28 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              id="new-card-answer"
+              onChange={(event) => setNewAnswer(event.target.value)}
+              placeholder="DTO means Data Transfer Object."
+              value={newAnswer}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-3 font-semibold text-[var(--app-primary-contrast)]"
+              type="submit"
+            >
+              <Check aria-hidden="true" size={18} strokeWidth={2.3} />
+              Save
+            </button>
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
+              onClick={() => setIsAddingCard(false)}
+              type="button"
+            >
+              <X aria-hidden="true" size={18} strokeWidth={2.3} />
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -231,10 +355,70 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
                 key={card.id}
               >
-                <h4 className="line-clamp-2 font-semibold">{card.question}</h4>
-                <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
-                  {card.answer}
-                </p>
+                {editingCardId === card.id ? (
+                  <form className="grid gap-3" onSubmit={updateCard}>
+                    <textarea
+                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base font-semibold outline-none focus:border-[var(--app-primary)]"
+                      onChange={(event) =>
+                        setEditingQuestion(event.target.value)
+                      }
+                      value={editingQuestion}
+                    />
+                    <textarea
+                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+                      onChange={(event) => setEditingAnswer(event.target.value)}
+                      value={editingAnswer}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        className="h-10 rounded-lg bg-[var(--app-primary)] px-3 text-sm font-semibold text-[var(--app-primary-contrast)]"
+                        type="submit"
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="h-10 rounded-lg border border-[var(--app-border)] px-3 text-sm font-semibold"
+                        onClick={() => setEditingCardId(null)}
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <h4 className="line-clamp-2 font-semibold">
+                      {card.question}
+                    </h4>
+                    <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
+                      {card.answer}
+                    </p>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        aria-label="Edit card"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)]"
+                        onClick={() => startEditingCard(card)}
+                        title="Edit card"
+                        type="button"
+                      >
+                        <Pencil aria-hidden="true" size={17} strokeWidth={2.2} />
+                      </button>
+                      <button
+                        aria-label="Delete card"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                        onClick={() => deleteCard(card)}
+                        title="Delete card"
+                        type="button"
+                      >
+                        <Trash2
+                          aria-hidden="true"
+                          size={17}
+                          strokeWidth={2.2}
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
               </article>
             ))}
           </div>
