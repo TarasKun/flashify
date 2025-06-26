@@ -250,13 +250,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               {progress?.learned ?? 0}/{progress?.total ?? 0} learned
             </p>
 
-            <button
+            <Link
               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)]"
-              type="button"
+              href={`/decks/${deck.id}/study`}
             >
               <Play aria-hidden="true" size={19} strokeWidth={2.4} />
               Start study
-            </button>
+            </Link>
           </>
         )}
       </section>

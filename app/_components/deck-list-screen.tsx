@@ -132,7 +132,7 @@ export function DeckListScreen() {
 
         <Link
           className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)]"
-          href={items[0] ? `/decks/${items[0].deck.id}` : "/"}
+          href={items[0] ? `/decks/${items[0].deck.id}/study` : "/"}
         >
           Start study
         </Link>
