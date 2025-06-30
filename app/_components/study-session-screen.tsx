@@ -1,8 +1,15 @@
 "use client";
 
-import { ArrowLeft, Check, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, RotateCcw, Undo2, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+} from "react";
 import {
   answerCard,
   getNextStudyDirection,
@@ -21,11 +28,22 @@ type StudyCard = {
   direction: StudyDirection;
 };
 
+type UndoEntry = {
+  card: Card;
+};
+
+const SWIPE_THRESHOLD = 84;
+const TAP_THRESHOLD = 8;
+
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartXRef = useRef<number | null>(null);
 
   const loadStudyCards = useCallback(async () => {
     setIsLoading(true);
@@ -58,20 +76,123 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     ? `1/${cards.length}`
     : cards.length.toString();
 
-  async function submitAnswer(answer: "know" | "dontKnow") {
-    if (!currentStudyCard) {
+  const submitAnswer = useCallback(
+    async (answer: "know" | "dontKnow") => {
+      if (!currentStudyCard || isSubmitting) {
+        return;
+      }
+
+      setIsSubmitting(true);
+      const updatedCard = answerCard({
+        card: currentStudyCard.card,
+        direction: currentStudyCard.direction,
+        answer,
+        now: new Date(),
+      });
+
+      setUndoStack((currentStack) => [
+        ...currentStack,
+        {
+          card: currentStudyCard.card,
+        },
+      ]);
+      await storage.saveCardProgress(updatedCard);
+      await loadStudyCards();
+      setDragOffset(0);
+      setIsSubmitting(false);
+    },
+    [currentStudyCard, isSubmitting, loadStudyCards, storage],
+  );
+
+  const undoLastAnswer = useCallback(async () => {
+    const previousEntry = undoStack.at(-1);
+
+    if (!previousEntry || isSubmitting) {
       return;
     }
 
-    const updatedCard = answerCard({
-      card: currentStudyCard.card,
-      direction: currentStudyCard.direction,
-      answer,
-      now: new Date(),
-    });
-
-    await storage.saveCardProgress(updatedCard);
+    setIsSubmitting(true);
+    await storage.saveCardProgress(previousEntry.card);
+    setUndoStack((currentStack) => currentStack.slice(0, -1));
     await loadStudyCards();
+    setDragOffset(0);
+    setIsSubmitting(false);
+  }, [isSubmitting, loadStudyCards, storage, undoStack]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        setIsAnswerVisible((currentValue) => !currentValue);
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        void submitAnswer("know");
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        void submitAnswer("dontKnow");
+        return;
+      }
+
+      if (
+        event.key === "Backspace" ||
+        (event.key.toLowerCase() === "z" && event.metaKey)
+      ) {
+        event.preventDefault();
+        void undoLastAnswer();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [submitAnswer, undoLastAnswer]);
+
+  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
+    dragStartXRef.current = event.clientX;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+    if (dragStartXRef.current === null) {
+      return;
+    }
+
+    setDragOffset(event.clientX - dragStartXRef.current);
+  }
+
+  function handlePointerUp(event: PointerEvent<HTMLButtonElement>) {
+    if (dragStartXRef.current === null) {
+      return;
+    }
+
+    const offset = event.clientX - dragStartXRef.current;
+
+    dragStartXRef.current = null;
+    setDragOffset(0);
+
+    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+      void submitAnswer(offset > 0 ? "know" : "dontKnow");
+      return;
+    }
+
+    if (Math.abs(offset) <= TAP_THRESHOLD) {
+      setIsAnswerVisible((currentValue) => !currentValue);
+    }
+  }
+
+  function handlePointerCancel() {
+    dragStartXRef.current = null;
+    setDragOffset(0);
   }
 
   function getPromptText(studyCard: StudyCard): string {
@@ -109,9 +230,14 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <>
           <button
             className="flex min-h-96 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-left shadow-[var(--app-shadow)]"
-            onClick={() =>
-              setIsAnswerVisible((currentValue) => !currentValue)
-            }
+            onPointerCancel={handlePointerCancel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            style={{
+              transform: `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`,
+              transition: dragOffset === 0 ? "transform 160ms ease" : "none",
+            }}
             type="button"
           >
             <span className="text-sm font-medium text-[var(--app-text-muted)]">
@@ -124,22 +250,34 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </span>
             <span className="flex items-center gap-2 text-sm font-medium text-[var(--app-text-muted)]">
               <RotateCcw aria-hidden="true" size={16} strokeWidth={2.2} />
-              Tap to flip
+              Tap to flip, swipe to answer
             </span>
           </button>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[1fr_3.5rem_1fr] gap-3">
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-lg border border-[var(--app-danger)] bg-[var(--app-surface)] px-4 font-semibold text-[var(--app-danger)]"
               onClick={() => submitAnswer("dontKnow")}
+              disabled={isSubmitting}
               type="button"
             >
               <X aria-hidden="true" size={20} strokeWidth={2.4} />
               Don&apos;t know
             </button>
             <button
+              aria-label="Undo"
+              className="grid size-14 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] disabled:opacity-40"
+              disabled={undoStack.length === 0 || isSubmitting}
+              onClick={undoLastAnswer}
+              title="Undo"
+              type="button"
+            >
+              <Undo2 aria-hidden="true" size={20} strokeWidth={2.3} />
+            </button>
+            <button
               className="flex h-14 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-4 font-semibold text-white"
               onClick={() => submitAnswer("know")}
+              disabled={isSubmitting}
               type="button"
             >
               <Check aria-hidden="true" size={20} strokeWidth={2.4} />
@@ -162,5 +300,20 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         </div>
       )}
     </section>
+  );
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select" ||
+    target.isContentEditable
   );
 }
