@@ -32,6 +32,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [isImportingText, setIsImportingText] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
+  const [isImportingCards, setIsImportingCards] = useState(false);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState("");
   const [editingAnswer, setEditingAnswer] = useState("");
@@ -116,6 +120,65 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     setNewAnswer("");
     setIsAddingCard(false);
     await loadDeck();
+  }
+
+  async function importCards(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const text = importText.trim();
+
+    if (!deck || !text || isImportingCards) {
+      return;
+    }
+
+    setImportError("");
+    setIsImportingCards(true);
+
+    try {
+      const response = await fetch("/api/ai/parse-cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+      const payload = (await response.json()) as {
+        cards?: Array<{
+          question?: unknown;
+          answer?: unknown;
+          explanation?: unknown;
+        }>;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Import failed.");
+      }
+
+      const parsedCards = (payload.cards ?? [])
+        .map((card) => ({
+          deckId: deck.id,
+          question: typeof card.question === "string" ? card.question.trim() : "",
+          answer: typeof card.answer === "string" ? card.answer.trim() : "",
+          explanation: "",
+        }))
+        .filter((card) => card.question && card.answer);
+
+      if (parsedCards.length === 0) {
+        throw new Error("No cards were found in this text.");
+      }
+
+      await storage.createCards(parsedCards);
+      setImportText("");
+      setIsImportingText(false);
+      await loadDeck();
+    } catch (error) {
+      setImportError(
+        error instanceof Error ? error.message : "Import failed.",
+      );
+    } finally {
+      setIsImportingCards(false);
+    }
   }
 
   function startEditingCard(card: Card) {
@@ -272,6 +335,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         </button>
         <button
           className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
+          onClick={() => setIsImportingText((currentValue) => !currentValue)}
           type="button"
         >
           <FileInput aria-hidden="true" size={22} strokeWidth={2.3} />
@@ -327,6 +391,57 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             <button
               className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
               onClick={() => setIsAddingCard(false)}
+              type="button"
+            >
+              <X aria-hidden="true" size={18} strokeWidth={2.3} />
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {isImportingText ? (
+        <form
+          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+          onSubmit={importCards}
+        >
+          <div>
+            <label
+              className="text-sm font-medium text-[var(--app-text-muted)]"
+              htmlFor="import-text"
+            >
+              Text to import
+            </label>
+            <textarea
+              className="mt-2 min-h-40 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              id="import-text"
+              onChange={(event) => setImportText(event.target.value)}
+              placeholder="What is a DTO?&#10;DTO means Data Transfer Object.&#10;Why are DTOs used?&#10;They make request data explicit."
+              value={importText}
+            />
+          </div>
+
+          {importError ? (
+            <p className="rounded-lg border border-[var(--app-danger)] bg-[var(--app-bg)] p-3 text-sm font-medium text-[var(--app-danger)]">
+              {importError}
+            </p>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-3 font-semibold text-[var(--app-primary-contrast)] disabled:opacity-50"
+              disabled={isImportingCards || !importText.trim()}
+              type="submit"
+            >
+              <FileInput aria-hidden="true" size={18} strokeWidth={2.3} />
+              {isImportingCards ? "Importing" : "Import"}
+            </button>
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
+              onClick={() => {
+                setIsImportingText(false);
+                setImportError("");
+              }}
               type="button"
             >
               <X aria-hidden="true" size={18} strokeWidth={2.3} />
