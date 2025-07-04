@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, Check, RotateCcw, Undo2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  RotateCcw,
+  Sparkles,
+  Undo2,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -40,7 +47,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
+  const [isExplanationVisible, setIsExplanationVisible] = useState(false);
+  const [explanationError, setExplanationError] = useState("");
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartXRef = useRef<number | null>(null);
@@ -60,6 +70,8 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       })),
     );
     setIsAnswerVisible(false);
+    setIsExplanationVisible(false);
+    setExplanationError("");
     setIsLoading(false);
   }, [deckId, storage]);
 
@@ -75,6 +87,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const progressText = currentStudyCard
     ? `1/${cards.length}`
     : cards.length.toString();
+  const currentExplanation = currentStudyCard?.card.explanation.trim() ?? "";
 
   const submitAnswer = useCallback(
     async (answer: "know" | "dontKnow") => {
@@ -118,6 +131,70 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     setDragOffset(0);
     setIsSubmitting(false);
   }, [isSubmitting, loadStudyCards, storage, undoStack]);
+
+  const showExplanation = useCallback(async () => {
+    if (!currentStudyCard || isLoadingExplanation) {
+      return;
+    }
+
+    setIsExplanationVisible(true);
+    setExplanationError("");
+
+    if (currentStudyCard.card.explanation.trim()) {
+      return;
+    }
+
+    setIsLoadingExplanation(true);
+
+    try {
+      const response = await fetch("/api/ai/explain-card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: currentStudyCard.card.question,
+          answer: currentStudyCard.card.answer,
+        }),
+      });
+      const payload = (await response.json()) as {
+        explanation?: unknown;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Explanation failed.");
+      }
+
+      const explanation =
+        typeof payload.explanation === "string" ? payload.explanation.trim() : "";
+
+      if (!explanation) {
+        throw new Error("AI returned an empty explanation.");
+      }
+
+      const updatedCard = await storage.updateCard(currentStudyCard.card.id, {
+        explanation,
+      });
+
+      setCards((currentCards) =>
+        currentCards.map((studyCard) =>
+          studyCard.card.id === updatedCard.id
+            ? {
+                ...studyCard,
+                card: updatedCard,
+              }
+            : studyCard,
+        ),
+      );
+    } catch (error) {
+      setExplanationError(
+        error instanceof Error ? error.message : "Explanation failed.",
+      );
+    } finally {
+      setIsLoadingExplanation(false);
+    }
+  }, [currentStudyCard, isLoadingExplanation, storage]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -284,6 +361,34 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               Know
             </button>
           </div>
+
+          <section className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+            <button
+              className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-4 font-semibold disabled:opacity-50"
+              disabled={isLoadingExplanation}
+              onClick={showExplanation}
+              type="button"
+            >
+              <Sparkles aria-hidden="true" size={18} strokeWidth={2.3} />
+              {isLoadingExplanation ? "Loading" : "Tell me more"}
+            </button>
+
+            {isExplanationVisible ? (
+              <div className="rounded-lg bg-[var(--app-surface-muted)] p-4">
+                {explanationError ? (
+                  <p className="text-sm font-medium text-[var(--app-danger)]">
+                    {explanationError}
+                  </p>
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">
+                    {isLoadingExplanation
+                      ? "Asking AI for a short explanation..."
+                      : currentExplanation}
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </section>
         </>
       ) : (
         <div className="grid gap-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center">

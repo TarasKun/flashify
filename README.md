@@ -2,37 +2,54 @@
 
 Mobile-first PWA for learning with flashcards.
 
-This project is built with [Next.js](https://nextjs.org), TypeScript, and the App Router.
+This project is built with [Next.js](https://nextjs.org), TypeScript, Tailwind CSS, IndexedDB, and the App Router.
+
+Flashify is offline-first for decks, cards, study progress, and cached explanations. AI actions run through server-side API routes so the OpenRouter key never goes into browser code.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 The MVP plan lives in [`MVP_SPEC.md`](./MVP_SPEC.md).
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` to `.env.local` and set:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+OPENROUTER_API_KEY=your-openrouter-key
+OPENROUTER_MODEL=meta-llama/llama-3.3-8b-instruct:free
+OPENROUTER_SITE_URL=http://localhost:3000
+OPENROUTER_APP_NAME=Flashify
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`OPENROUTER_API_KEY` must stay server-side. Do not expose it as a `NEXT_PUBLIC_*` variable.
+
+## Scripts
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm test
+npm run build
+```
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The MVP target is Vercel free tier.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set these environment variables in the Vercel project:
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL`
+- `OPENROUTER_SITE_URL`
+- `OPENROUTER_APP_NAME`
+
+The app stores user decks and progress in the browser through IndexedDB, so there is no database or login requirement for MVP.
