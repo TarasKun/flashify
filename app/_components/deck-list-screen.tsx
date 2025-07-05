@@ -1,6 +1,6 @@
 "use client";
 
-import { FileInput, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Pencil, Play, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Deck, EntityId } from "@/lib/domain";
@@ -131,16 +131,18 @@ export function DeckListScreen() {
         </div>
 
         <Link
-          className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)]"
+          aria-disabled={!items[0]}
+          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
           href={items[0] ? `/decks/${items[0].deck.id}/study` : "/"}
         >
+          <Play aria-hidden="true" size={19} strokeWidth={2.4} />
           Start study
         </Link>
       </section>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section>
         <form
-          className="col-span-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3"
+          className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3"
           onSubmit={createDeck}
         >
           <label
@@ -166,21 +168,6 @@ export function DeckListScreen() {
             </button>
           </div>
         </form>
-
-        <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
-          type="button"
-        >
-          <Plus aria-hidden="true" size={22} strokeWidth={2.3} />
-          <span>Add card</span>
-        </button>
-        <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
-          type="button"
-        >
-          <FileInput aria-hidden="true" size={22} strokeWidth={2.3} />
-          <span>Import text</span>
-        </button>
       </section>
 
       <section>
@@ -281,14 +268,6 @@ export function DeckListScreen() {
           })}
         </div>
       </section>
-
-      <button
-        className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 font-semibold text-[var(--app-text)]"
-        type="button"
-      >
-        <Sparkles aria-hidden="true" size={19} strokeWidth={2.3} />
-        Tell me more
-      </button>
     </section>
   );
 }

@@ -12,6 +12,7 @@
   --app-success: #16a34a;
   --app-danger: #dc2626;
   --app-shadow: 0 18px 45px rgb(23 26 22 / 10%);
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +28,7 @@
     --app-success: #4ade80;
     --app-danger: #f87171;
     --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
+    color-scheme: dark;
   }
 }
 
@@ -42,6 +44,7 @@
   --app-success: #16a34a;
   --app-danger: #dc2626;
   --app-shadow: 0 18px 45px rgb(23 26 22 / 10%);
+  color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -56,6 +59,7 @@
   --app-success: #4ade80;
   --app-danger: #f87171;
   --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
+  color-scheme: dark;
 }
 
 html {
@@ -101,10 +105,4 @@ select {
 
 button {
   -webkit-tap-highlight-color: transparent;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }
