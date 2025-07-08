@@ -313,6 +313,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               {progress?.learned ?? 0}/{progress?.total ?? 0} learned
             </p>
 
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--app-surface-muted)]">
+              <div
+                className="h-full rounded-full bg-[var(--app-primary)]"
+                style={{
+                  width:
+                    progress && progress.total > 0
+                      ? `${Math.round((progress.learned / progress.total) * 100)}%`
+                      : "0%",
+                }}
+              />
+            </div>
+
             <Link
               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)]"
               href={`/decks/${deck.id}/study`}
@@ -326,26 +338,36 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <section className="grid grid-cols-2 gap-3">
         <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
+          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-semibold shadow-sm"
           onClick={() => setIsAddingCard((currentValue) => !currentValue)}
           type="button"
         >
-          <Plus aria-hidden="true" size={22} strokeWidth={2.3} />
+          <Plus
+            aria-hidden="true"
+            className="text-[var(--app-primary)]"
+            size={22}
+            strokeWidth={2.3}
+          />
           <span>Add card</span>
         </button>
         <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-medium"
+          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-semibold shadow-sm"
           onClick={() => setIsImportingText((currentValue) => !currentValue)}
           type="button"
         >
-          <FileInput aria-hidden="true" size={22} strokeWidth={2.3} />
+          <FileInput
+            aria-hidden="true"
+            className="text-[var(--app-success)]"
+            size={22}
+            strokeWidth={2.3}
+          />
           <span>Import text</span>
         </button>
       </section>
 
       {isAddingCard ? (
         <form
-          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
           onSubmit={createCard}
         >
           <div>
@@ -356,7 +378,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Question
             </label>
             <textarea
-              className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
               id="new-card-question"
               onChange={(event) => setNewQuestion(event.target.value)}
               placeholder="What is a DTO?"
@@ -372,7 +394,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Answer
             </label>
             <textarea
-              className="mt-2 min-h-28 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-28 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
               id="new-card-answer"
               onChange={(event) => setNewAnswer(event.target.value)}
               placeholder="DTO means Data Transfer Object."
@@ -402,7 +424,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isImportingText ? (
         <form
-          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
           onSubmit={importCards}
         >
           <div>
@@ -413,7 +435,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Text to import
             </label>
             <textarea
-              className="mt-2 min-h-40 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-40 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
               id="import-text"
               onChange={(event) => setImportText(event.target.value)}
               placeholder="What is a DTO?&#10;DTO means Data Transfer Object.&#10;Why are DTOs used?&#10;They make request data explicit."
@@ -422,7 +444,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           </div>
 
           {importError ? (
-            <p className="rounded-lg border border-[var(--app-danger)] bg-[var(--app-bg)] p-3 text-sm font-medium text-[var(--app-danger)]">
+            <p className="rounded-lg border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-semibold text-[var(--app-danger)]">
               {importError}
             </p>
           ) : null}
@@ -467,20 +489,20 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <div className="grid gap-3">
             {cards.map((card) => (
               <article
-                className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+                className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
                 key={card.id}
               >
                 {editingCardId === card.id ? (
                   <form className="grid gap-3" onSubmit={updateCard}>
                     <textarea
-                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base font-semibold outline-none focus:border-[var(--app-primary)]"
+                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base font-semibold outline-none transition focus:border-[var(--app-primary)]"
                       onChange={(event) =>
                         setEditingQuestion(event.target.value)
                       }
                       value={editingQuestion}
                     />
                     <textarea
-                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none focus:border-[var(--app-primary)]"
+                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
                       onChange={(event) => setEditingAnswer(event.target.value)}
                       value={editingAnswer}
                     />
@@ -508,6 +530,11 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
                       {card.answer}
                     </p>
+                    {card.explanation ? (
+                      <p className="mt-3 w-fit rounded-full bg-[var(--app-success-soft)] px-3 py-1 text-xs font-semibold text-[var(--app-success)]">
+                        Explanation saved
+                      </p>
+                    ) : null}
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         aria-label="Edit card"

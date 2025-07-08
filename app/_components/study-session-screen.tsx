@@ -294,19 +294,19 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.3} />
           Deck
         </Link>
-        <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-medium text-[var(--app-text-muted)]">
+        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
           {isLoading ? "..." : progressText}
         </span>
       </div>
 
       {isLoading ? (
-        <div className="grid min-h-80 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-sm font-medium text-[var(--app-text-muted)]">
+        <div className="grid min-h-80 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-sm font-medium text-[var(--app-text-muted)] shadow-sm">
           Loading study cards
         </div>
       ) : currentStudyCard ? (
         <>
           <button
-            className="flex min-h-96 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-left shadow-[var(--app-shadow)]"
+            className="flex min-h-[25rem] touch-pan-y flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-left shadow-[var(--app-shadow)]"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -317,10 +317,15 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             }}
             type="button"
           >
-            <span className="text-sm font-medium text-[var(--app-text-muted)]">
-              {isAnswerVisible ? "Answer" : "Prompt"}
+            <span className="flex items-center justify-between gap-3 text-sm font-semibold text-[var(--app-text-muted)]">
+              <span>{isAnswerVisible ? "Answer" : "Prompt"}</span>
+              <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-xs">
+                {currentStudyCard.direction === "forward"
+                  ? "Question -> answer"
+                  : "Answer -> question"}
+              </span>
             </span>
-            <span className="whitespace-pre-wrap text-3xl font-semibold leading-tight tracking-normal">
+            <span className="whitespace-pre-wrap break-words text-3xl font-semibold leading-tight tracking-normal">
               {isAnswerVisible
                 ? getAnswerText(currentStudyCard)
                 : getPromptText(currentStudyCard)}
@@ -333,7 +338,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
           <div className="grid grid-cols-[1fr_3.5rem_1fr] gap-3">
             <button
-              className="flex h-14 items-center justify-center gap-2 rounded-lg border border-[var(--app-danger)] bg-[var(--app-surface)] px-4 font-semibold text-[var(--app-danger)]"
+              className="flex h-14 items-center justify-center gap-2 rounded-lg border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-semibold text-[var(--app-danger)] disabled:opacity-50"
               onClick={() => submitAnswer("dontKnow")}
               disabled={isSubmitting}
               type="button"
@@ -343,7 +348,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
             <button
               aria-label="Undo"
-              className="grid size-14 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] disabled:opacity-40"
+              className="grid size-14 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] shadow-sm disabled:opacity-40"
               disabled={undoStack.length === 0 || isSubmitting}
               onClick={undoLastAnswer}
               title="Undo"
@@ -352,7 +357,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <Undo2 aria-hidden="true" size={20} strokeWidth={2.3} />
             </button>
             <button
-              className="flex h-14 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-4 font-semibold text-white"
+              className="flex h-14 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-4 font-semibold text-white shadow-sm disabled:opacity-50"
               onClick={() => submitAnswer("know")}
               disabled={isSubmitting}
               type="button"
@@ -362,7 +367,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
           </div>
 
-          <section className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+          <section className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
             <button
               className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-4 font-semibold disabled:opacity-50"
               disabled={isLoadingExplanation}
@@ -380,7 +385,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
                     {explanationError}
                   </p>
                 ) : (
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">
+                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[var(--app-text-muted)]">
                     {isLoadingExplanation
                       ? "Asking AI for a short explanation..."
                       : currentExplanation}
@@ -391,7 +396,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           </section>
         </>
       ) : (
-        <div className="grid gap-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center">
+        <div className="grid gap-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center shadow-sm">
           <p className="text-xl font-semibold">No cards due</p>
           <p className="text-sm text-[var(--app-text-muted)]">
             Add new cards or come back when reviews are ready.

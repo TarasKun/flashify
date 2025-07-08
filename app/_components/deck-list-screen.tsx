@@ -117,17 +117,38 @@ export function DeckListScreen() {
     <section className="grid gap-5">
       <section className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--app-text-muted)]">
               Today
             </p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-normal">
+            <h2 className="mt-1 truncate text-2xl font-semibold tracking-normal">
               {isLoading ? "Loading decks" : `${dueTotal} cards due`}
             </h2>
           </div>
-          <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-medium text-[var(--app-text-muted)]">
+          <span className="shrink-0 rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
             {learnedTotal}/{cardsTotal}
           </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
+            <p className="text-lg font-semibold">{items.length}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+              Decks
+            </p>
+          </div>
+          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
+            <p className="text-lg font-semibold">{cardsTotal}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+              Cards
+            </p>
+          </div>
+          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
+            <p className="text-lg font-semibold">{learnedTotal}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+              Learned
+            </p>
+          </div>
         </div>
 
         <Link
@@ -142,7 +163,7 @@ export function DeckListScreen() {
 
       <section>
         <form
-          className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3"
+          className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
           onSubmit={createDeck}
         >
           <label
@@ -153,7 +174,7 @@ export function DeckListScreen() {
           </label>
           <div className="mt-2 flex gap-2">
             <input
-              className="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-3 text-base outline-none focus:border-[var(--app-primary)]"
+              className="h-12 min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-3 text-base outline-none transition focus:border-[var(--app-primary)]"
               id="new-deck-name"
               onChange={(event) => setNewDeckName(event.target.value)}
               placeholder="Deck name"
@@ -179,6 +200,15 @@ export function DeckListScreen() {
         </div>
 
         <div className="grid gap-3">
+          {!isLoading && items.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center">
+              <p className="font-semibold">No decks yet</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
+                Create a deck first, then add cards manually or import text.
+              </p>
+            </div>
+          ) : null}
+
           {items.map((item) => {
             const progressPercent =
               item.progress.total > 0
@@ -229,7 +259,7 @@ export function DeckListScreen() {
                           {item.progress.learned}/{item.progress.total} learned
                         </p>
                       </Link>
-                      <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-medium text-[var(--app-text-muted)]">
+                      <span className="shrink-0 rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
                         {item.dueCount} due
                       </span>
                     </div>
@@ -241,7 +271,15 @@ export function DeckListScreen() {
                       />
                     </div>
 
-                    <div className="mt-3 flex justify-end gap-2">
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <Link
+                        className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[var(--app-surface-muted)] px-3 text-sm font-semibold"
+                        href={`/decks/${item.deck.id}/study`}
+                      >
+                        <Play aria-hidden="true" size={16} strokeWidth={2.4} />
+                        Study
+                      </Link>
+                      <div className="flex gap-2">
                       <button
                         aria-label={`Rename ${item.deck.name}`}
                         className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)]"
@@ -260,6 +298,7 @@ export function DeckListScreen() {
                       >
                         <Trash2 aria-hidden="true" size={17} strokeWidth={2.2} />
                       </button>
+                      </div>
                     </div>
                   </>
                 )}

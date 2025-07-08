@@ -1,63 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --app-bg: #f7f8f5;
+  --app-bg: #f5f7fb;
   --app-surface: #ffffff;
-  --app-surface-muted: #eff2ec;
-  --app-text: #171a16;
-  --app-text-muted: #626a5d;
-  --app-border: #dde3d8;
+  --app-surface-muted: #eef3f8;
+  --app-text: #101828;
+  --app-text-muted: #667085;
+  --app-border: #d9e2ec;
   --app-primary: #2563eb;
   --app-primary-contrast: #ffffff;
-  --app-success: #16a34a;
+  --app-primary-soft: #dbeafe;
+  --app-success: #059669;
+  --app-success-soft: #d1fae5;
   --app-danger: #dc2626;
-  --app-shadow: 0 18px 45px rgb(23 26 22 / 10%);
+  --app-danger-soft: #fee2e2;
+  --app-shadow: 0 18px 45px rgb(16 24 40 / 10%);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --app-bg: #10130f;
-    --app-surface: #181c16;
-    --app-surface-muted: #22281f;
-    --app-text: #f3f6ef;
-    --app-text-muted: #a7b0a0;
-    --app-border: #30382c;
-    --app-primary: #60a5fa;
+    --app-bg: #0b1020;
+    --app-surface: #111827;
+    --app-surface-muted: #1e293b;
+    --app-text: #f8fafc;
+    --app-text-muted: #a8b3c7;
+    --app-border: #293548;
+    --app-primary: #7dd3fc;
     --app-primary-contrast: #07111f;
-    --app-success: #4ade80;
+    --app-primary-soft: #123247;
+    --app-success: #34d399;
+    --app-success-soft: #113f32;
     --app-danger: #f87171;
+    --app-danger-soft: #451a1a;
     --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
     color-scheme: dark;
   }
 }
 
 [data-theme="light"] {
-  --app-bg: #f7f8f5;
+  --app-bg: #f5f7fb;
   --app-surface: #ffffff;
-  --app-surface-muted: #eff2ec;
-  --app-text: #171a16;
-  --app-text-muted: #626a5d;
-  --app-border: #dde3d8;
+  --app-surface-muted: #eef3f8;
+  --app-text: #101828;
+  --app-text-muted: #667085;
+  --app-border: #d9e2ec;
   --app-primary: #2563eb;
   --app-primary-contrast: #ffffff;
-  --app-success: #16a34a;
+  --app-primary-soft: #dbeafe;
+  --app-success: #059669;
+  --app-success-soft: #d1fae5;
   --app-danger: #dc2626;
-  --app-shadow: 0 18px 45px rgb(23 26 22 / 10%);
+  --app-danger-soft: #fee2e2;
+  --app-shadow: 0 18px 45px rgb(16 24 40 / 10%);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --app-bg: #10130f;
-  --app-surface: #181c16;
-  --app-surface-muted: #22281f;
-  --app-text: #f3f6ef;
-  --app-text-muted: #a7b0a0;
-  --app-border: #30382c;
-  --app-primary: #60a5fa;
+  --app-bg: #0b1020;
+  --app-surface: #111827;
+  --app-surface-muted: #1e293b;
+  --app-text: #f8fafc;
+  --app-text-muted: #a8b3c7;
+  --app-border: #293548;
+  --app-primary: #7dd3fc;
   --app-primary-contrast: #07111f;
-  --app-success: #4ade80;
+  --app-primary-soft: #123247;
+  --app-success: #34d399;
+  --app-success-soft: #113f32;
   --app-danger: #f87171;
+  --app-danger-soft: #451a1a;
   --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
   color-scheme: dark;
 }
