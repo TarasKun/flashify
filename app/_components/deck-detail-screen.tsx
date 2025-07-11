@@ -20,6 +20,12 @@ type DeckDetailScreenProps = {
   deckId: string;
 };
 
+type ImportPreviewCard = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
 export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const router = useRouter();
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -36,6 +42,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
   const [isImportingCards, setIsImportingCards] = useState(false);
+  const [importPreviewCards, setImportPreviewCards] = useState<
+    ImportPreviewCard[]
+  >([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState("");
   const [editingAnswer, setEditingAnswer] = useState("");
@@ -122,7 +131,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     await loadDeck();
   }
 
-  async function importCards(event: FormEvent<HTMLFormElement>) {
+  async function previewImportCards(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const text = importText.trim();
@@ -132,6 +141,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     }
 
     setImportError("");
+    setImportPreviewCards([]);
     setIsImportingCards(true);
 
     try {
@@ -157,10 +167,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       const parsedCards = (payload.cards ?? [])
         .map((card) => ({
-          deckId: deck.id,
+          id: crypto.randomUUID(),
           question: typeof card.question === "string" ? card.question.trim() : "",
           answer: typeof card.answer === "string" ? card.answer.trim() : "",
-          explanation: "",
         }))
         .filter((card) => card.question && card.answer);
 
@@ -168,14 +177,69 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         throw new Error("No cards were found in this text.");
       }
 
-      await storage.createCards(parsedCards);
-      setImportText("");
-      setIsImportingText(false);
-      await loadDeck();
+      setImportPreviewCards(parsedCards);
     } catch (error) {
       setImportError(
         error instanceof Error ? error.message : "Import failed.",
       );
+    } finally {
+      setIsImportingCards(false);
+    }
+  }
+
+  function updateImportPreviewCard(
+    id: string,
+    field: "question" | "answer",
+    value: string,
+  ) {
+    setImportPreviewCards((currentCards) =>
+      currentCards.map((card) =>
+        card.id === id
+          ? {
+              ...card,
+              [field]: value,
+            }
+          : card,
+      ),
+    );
+  }
+
+  function removeImportPreviewCard(id: string) {
+    setImportPreviewCards((currentCards) =>
+      currentCards.filter((card) => card.id !== id),
+    );
+  }
+
+  async function saveImportPreview() {
+    if (!deck || isImportingCards) {
+      return;
+    }
+
+    const cardsToSave = importPreviewCards
+      .map((card) => ({
+        deckId: deck.id,
+        question: card.question.trim(),
+        answer: card.answer.trim(),
+        explanation: "",
+      }))
+      .filter((card) => card.question && card.answer);
+
+    if (cardsToSave.length === 0) {
+      setImportError("No valid cards to save.");
+      return;
+    }
+
+    setImportError("");
+    setIsImportingCards(true);
+
+    try {
+      await storage.createCards(cardsToSave);
+      setImportText("");
+      setImportPreviewCards([]);
+      setIsImportingText(false);
+      await loadDeck();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Save failed.");
     } finally {
       setIsImportingCards(false);
     }
@@ -425,7 +489,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       {isImportingText ? (
         <form
           className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
-          onSubmit={importCards}
+          onSubmit={previewImportCards}
         >
           <div>
             <label
@@ -437,7 +501,11 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             <textarea
               className="mt-2 min-h-40 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
               id="import-text"
-              onChange={(event) => setImportText(event.target.value)}
+              onChange={(event) => {
+                setImportText(event.target.value);
+                setImportPreviewCards([]);
+                setImportError("");
+              }}
               placeholder="What is a DTO?&#10;DTO means Data Transfer Object.&#10;Why are DTOs used?&#10;They make request data explicit."
               value={importText}
             />
@@ -456,12 +524,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               type="submit"
             >
               <FileInput aria-hidden="true" size={18} strokeWidth={2.3} />
-              {isImportingCards ? "Importing" : "Import"}
+              {isImportingCards ? "Parsing" : "Preview"}
             </button>
             <button
               className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
               onClick={() => {
                 setIsImportingText(false);
+                setImportPreviewCards([]);
                 setImportError("");
               }}
               type="button"
@@ -470,6 +539,76 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Cancel
             </button>
           </div>
+
+          {importPreviewCards.length > 0 ? (
+            <section className="grid gap-3 border-t border-[var(--app-border)] pt-3">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-semibold">Preview</h4>
+                <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--app-primary)]">
+                  {importPreviewCards.length} cards
+                </span>
+              </div>
+
+              <div className="grid gap-3">
+                {importPreviewCards.map((card, index) => (
+                  <article
+                    className="grid gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3"
+                    key={card.id}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">Card {index + 1}</p>
+                      <button
+                        aria-label={`Remove card ${index + 1}`}
+                        className="grid size-9 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                        onClick={() => removeImportPreviewCard(card.id)}
+                        type="button"
+                      >
+                        <Trash2
+                          aria-hidden="true"
+                          size={16}
+                          strokeWidth={2.2}
+                        />
+                      </button>
+                    </div>
+                    <textarea
+                      aria-label={`Question for card ${index + 1}`}
+                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm font-semibold outline-none transition focus:border-[var(--app-primary)]"
+                      onChange={(event) =>
+                        updateImportPreviewCard(
+                          card.id,
+                          "question",
+                          event.target.value,
+                        )
+                      }
+                      value={card.question}
+                    />
+                    <textarea
+                      aria-label={`Answer for card ${index + 1}`}
+                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm outline-none transition focus:border-[var(--app-primary)]"
+                      onChange={(event) =>
+                        updateImportPreviewCard(
+                          card.id,
+                          "answer",
+                          event.target.value,
+                        )
+                      }
+                      value={card.answer}
+                    />
+                  </article>
+                ))}
+              </div>
+
+              <button
+                className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-3 font-semibold text-white disabled:opacity-50"
+                disabled={isImportingCards}
+                onClick={saveImportPreview}
+                type="button"
+              >
+                <Check aria-hidden="true" size={18} strokeWidth={2.3} />
+                Save preview
+              </button>
+            </section>
+          ) : null}
         </form>
       ) : null}
 
