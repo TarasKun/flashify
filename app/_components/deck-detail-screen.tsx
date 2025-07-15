@@ -309,30 +309,30 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   return (
     <section className="grid gap-5">
       <Link
-        className="flex w-fit items-center gap-2 text-sm font-semibold text-[var(--app-text-muted)]"
+        className="flex w-fit items-center gap-2 rounded-full bg-white/70 px-3 py-2 text-sm font-bold text-[var(--app-text-muted)] shadow-sm backdrop-blur dark:bg-white/10"
         href="/"
       >
         <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.3} />
         Decks
       </Link>
 
-      <section className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]">
+      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={renameDeck}>
             <input
-              className="h-12 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-3 text-xl font-semibold outline-none focus:border-[var(--app-primary)]"
+              className="h-14 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-xl font-black outline-none focus:border-[var(--app-primary)] dark:bg-white/10"
               onChange={(event) => setDeckName(event.target.value)}
               value={deckName}
             />
             <div className="grid grid-cols-2 gap-2">
               <button
-                className="h-11 rounded-lg bg-[var(--app-primary)] px-3 font-semibold text-[var(--app-primary-contrast)]"
+                className="h-12 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)]"
                 type="submit"
               >
                 Save
               </button>
               <button
-                className="h-11 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
+                className="h-12 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
                 onClick={() => setIsEditing(false)}
                 type="button"
               >
@@ -347,14 +347,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 <p className="text-sm font-medium text-[var(--app-text-muted)]">
                   Deck
                 </p>
-                <h2 className="mt-1 truncate text-2xl font-semibold">
+                <h2 className="mt-2 truncate text-3xl font-black">
                   {deck.name}
                 </h2>
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
                   aria-label="Rename deck"
-                  className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)]"
+                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-text-muted)] shadow-sm dark:bg-white/10"
                   onClick={() => setIsEditing(true)}
                   title="Rename deck"
                   type="button"
@@ -363,7 +363,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 </button>
                 <button
                   aria-label="Delete deck"
-                  className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-danger)] shadow-sm dark:bg-white/10"
                   onClick={deleteDeck}
                   title="Delete deck"
                   type="button"
@@ -373,11 +373,11 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               </div>
             </div>
 
-            <p className="mt-2 text-sm text-[var(--app-text-muted)]">
+            <p className="mt-3 text-sm font-semibold text-[var(--app-text-muted)]">
               {progress?.learned ?? 0}/{progress?.total ?? 0} learned
             </p>
 
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--app-surface-muted)]">
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/65 dark:bg-white/10">
               <div
                 className="h-full rounded-full bg-[var(--app-primary)]"
                 style={{
@@ -390,7 +390,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             </div>
 
             <Link
-              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)]"
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)]"
               href={`/decks/${deck.id}/study`}
             >
               <Play aria-hidden="true" size={19} strokeWidth={2.4} />
@@ -402,7 +402,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <section className="grid grid-cols-2 gap-3">
         <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-semibold shadow-sm"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
           onClick={() => setIsAddingCard((currentValue) => !currentValue)}
           type="button"
         >
@@ -415,7 +415,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <span>Add card</span>
         </button>
         <button
-          className="flex h-24 flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-semibold shadow-sm"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
           onClick={() => setIsImportingText((currentValue) => !currentValue)}
           type="button"
         >
@@ -431,7 +431,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isAddingCard ? (
         <form
-          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={createCard}
         >
           <div>
@@ -442,7 +442,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Question
             </label>
             <textarea
-              className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="new-card-question"
               onChange={(event) => setNewQuestion(event.target.value)}
               placeholder="What is a DTO?"
@@ -458,7 +458,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Answer
             </label>
             <textarea
-              className="mt-2 min-h-28 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-28 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="new-card-answer"
               onChange={(event) => setNewAnswer(event.target.value)}
               placeholder="DTO means Data Transfer Object."
@@ -488,7 +488,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isImportingText ? (
         <form
-          className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={previewImportCards}
         >
           <div>
@@ -499,7 +499,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               Text to import
             </label>
             <textarea
-              className="mt-2 min-h-40 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
+              className="mt-2 min-h-40 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="import-text"
               onChange={(event) => {
                 setImportText(event.target.value);
@@ -512,14 +512,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           </div>
 
           {importError ? (
-            <p className="rounded-lg border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-semibold text-[var(--app-danger)]">
+            <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-bold text-[var(--app-danger)]">
               {importError}
             </p>
           ) : null}
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-3 font-semibold text-[var(--app-primary-contrast)] disabled:opacity-50"
+              className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
               disabled={isImportingCards || !importText.trim()}
               type="submit"
             >
@@ -527,7 +527,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               {isImportingCards ? "Parsing" : "Preview"}
             </button>
             <button
-              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
               onClick={() => {
                 setIsImportingText(false);
                 setImportPreviewCards([]);
@@ -552,14 +552,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               <div className="grid gap-3">
                 {importPreviewCards.map((card, index) => (
                   <article
-                    className="grid gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3"
+                    className="grid gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-white/65 p-3 shadow-sm dark:bg-white/10"
                     key={card.id}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">Card {index + 1}</p>
                       <button
                         aria-label={`Remove card ${index + 1}`}
-                        className="grid size-9 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                        className="grid size-9 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-danger)] dark:bg-white/10"
                         onClick={() => removeImportPreviewCard(card.id)}
                         type="button"
                       >
@@ -572,7 +572,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     </div>
                     <textarea
                       aria-label={`Question for card ${index + 1}`}
-                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm font-semibold outline-none transition focus:border-[var(--app-primary)]"
+                      className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm font-bold outline-none transition focus:border-[var(--app-primary)]"
                       onChange={(event) =>
                         updateImportPreviewCard(
                           card.id,
@@ -584,7 +584,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     />
                     <textarea
                       aria-label={`Answer for card ${index + 1}`}
-                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm outline-none transition focus:border-[var(--app-primary)]"
+                      className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm outline-none transition focus:border-[var(--app-primary)]"
                       onChange={(event) =>
                         updateImportPreviewCard(
                           card.id,
@@ -599,7 +599,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               </div>
 
               <button
-                className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-3 font-semibold text-white disabled:opacity-50"
+                className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white disabled:opacity-50"
                 disabled={isImportingCards}
                 onClick={saveImportPreview}
                 type="button"
@@ -628,32 +628,32 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <div className="grid gap-3">
             {cards.map((card) => (
               <article
-                className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
+                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
                 key={card.id}
               >
                 {editingCardId === card.id ? (
                   <form className="grid gap-3" onSubmit={updateCard}>
                     <textarea
-                      className="min-h-20 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base font-semibold outline-none transition focus:border-[var(--app-primary)]"
+                      className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
                       onChange={(event) =>
                         setEditingQuestion(event.target.value)
                       }
                       value={editingQuestion}
                     />
                     <textarea
-                      className="min-h-24 w-full resize-none rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-3 text-base outline-none transition focus:border-[var(--app-primary)]"
+                      className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
                       onChange={(event) => setEditingAnswer(event.target.value)}
                       value={editingAnswer}
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        className="h-10 rounded-lg bg-[var(--app-primary)] px-3 text-sm font-semibold text-[var(--app-primary-contrast)]"
+                        className="h-11 rounded-full bg-[var(--app-primary)] px-4 text-sm font-black text-[var(--app-primary-contrast)]"
                         type="submit"
                       >
                         Save
                       </button>
                       <button
-                        className="h-10 rounded-lg border border-[var(--app-border)] px-3 text-sm font-semibold"
+                        className="h-11 rounded-full border border-[var(--app-border)] bg-white/60 px-4 text-sm font-black dark:bg-white/10"
                         onClick={() => setEditingCardId(null)}
                         type="button"
                       >
@@ -663,21 +663,21 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   </form>
                 ) : (
                   <>
-                    <h4 className="line-clamp-2 font-semibold">
+                    <h4 className="line-clamp-2 text-lg font-black">
                       {card.question}
                     </h4>
                     <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
                       {card.answer}
                     </p>
                     {card.explanation ? (
-                      <p className="mt-3 w-fit rounded-full bg-[var(--app-success-soft)] px-3 py-1 text-xs font-semibold text-[var(--app-success)]">
+                      <p className="mt-3 w-fit rounded-full bg-[var(--app-success-soft)] px-3 py-1 text-xs font-black text-[var(--app-success)]">
                         Explanation saved
                       </p>
                     ) : null}
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         aria-label="Edit card"
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)]"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
                         onClick={() => startEditingCard(card)}
                         title="Edit card"
                         type="button"
@@ -686,7 +686,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                       </button>
                       <button
                         aria-label="Delete card"
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
                         onClick={() => deleteCard(card)}
                         title="Delete card"
                         type="button"

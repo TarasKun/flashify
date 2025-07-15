@@ -33,7 +33,7 @@ export function ThemeToggle() {
   return (
     <button
       aria-label={label}
-      className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-sm"
+      className="grid size-12 place-items-center rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_88%,transparent)] text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur"
       onClick={toggleTheme}
       title={label}
       type="button"

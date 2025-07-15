@@ -1,76 +1,99 @@
 @import "tailwindcss";
 
 :root {
-  --app-bg: #f5f7fb;
+  --app-bg: #f7f8ff;
   --app-surface: #ffffff;
-  --app-surface-muted: #eef3f8;
-  --app-text: #101828;
-  --app-text-muted: #667085;
-  --app-border: #d9e2ec;
-  --app-primary: #2563eb;
+  --app-surface-muted: #f0f3ff;
+  --app-text: #111827;
+  --app-text-muted: #6b7280;
+  --app-border: #dfe5f6;
+  --app-primary: #3f5bf6;
   --app-primary-contrast: #ffffff;
-  --app-primary-soft: #dbeafe;
-  --app-success: #059669;
-  --app-success-soft: #d1fae5;
-  --app-danger: #dc2626;
-  --app-danger-soft: #fee2e2;
-  --app-shadow: 0 18px 45px rgb(16 24 40 / 10%);
+  --app-primary-soft: #e8edff;
+  --app-success: #109b64;
+  --app-success-soft: #dcf8ec;
+  --app-warning: #f59e0b;
+  --app-warning-soft: #fff2cf;
+  --app-danger: #e5484d;
+  --app-danger-soft: #ffe5e7;
+  --app-panel-gradient: linear-gradient(135deg, #eef3ff 0%, #f9f4ff 48%, #ecfff7 100%);
+  --app-card-gradient: linear-gradient(145deg, #ffffff 0%, #f7f8ff 58%, #f1fbff 100%);
+  --app-shadow: 0 22px 60px rgb(63 91 246 / 14%);
+  --app-shadow-soft: 0 12px 28px rgb(17 24 39 / 8%);
+  --app-radius-lg: 28px;
+  --app-radius-md: 22px;
+  --app-radius-sm: 16px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --app-bg: #0b1020;
-    --app-surface: #111827;
-    --app-surface-muted: #1e293b;
+    --app-bg: #10131f;
+    --app-surface: #171b2a;
+    --app-surface-muted: #22283b;
     --app-text: #f8fafc;
-    --app-text-muted: #a8b3c7;
-    --app-border: #293548;
-    --app-primary: #7dd3fc;
-    --app-primary-contrast: #07111f;
-    --app-primary-soft: #123247;
-    --app-success: #34d399;
-    --app-success-soft: #113f32;
-    --app-danger: #f87171;
-    --app-danger-soft: #451a1a;
-    --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
+    --app-text-muted: #a8b0c6;
+    --app-border: #30364c;
+    --app-primary: #93a5ff;
+    --app-primary-contrast: #10131f;
+    --app-primary-soft: #293050;
+    --app-success: #5ee0a2;
+    --app-success-soft: #173828;
+    --app-warning: #fbbf24;
+    --app-warning-soft: #3b2f12;
+    --app-danger: #ff8b8f;
+    --app-danger-soft: #441f25;
+    --app-panel-gradient: linear-gradient(135deg, #171b2a 0%, #242036 52%, #132b2a 100%);
+    --app-card-gradient: linear-gradient(145deg, #1a1f30 0%, #151a28 58%, #12272d 100%);
+    --app-shadow: 0 22px 60px rgb(0 0 0 / 28%);
+    --app-shadow-soft: 0 12px 28px rgb(0 0 0 / 20%);
     color-scheme: dark;
   }
 }
 
 [data-theme="light"] {
-  --app-bg: #f5f7fb;
+  --app-bg: #f7f8ff;
   --app-surface: #ffffff;
-  --app-surface-muted: #eef3f8;
-  --app-text: #101828;
-  --app-text-muted: #667085;
-  --app-border: #d9e2ec;
-  --app-primary: #2563eb;
+  --app-surface-muted: #f0f3ff;
+  --app-text: #111827;
+  --app-text-muted: #6b7280;
+  --app-border: #dfe5f6;
+  --app-primary: #3f5bf6;
   --app-primary-contrast: #ffffff;
-  --app-primary-soft: #dbeafe;
-  --app-success: #059669;
-  --app-success-soft: #d1fae5;
-  --app-danger: #dc2626;
-  --app-danger-soft: #fee2e2;
-  --app-shadow: 0 18px 45px rgb(16 24 40 / 10%);
+  --app-primary-soft: #e8edff;
+  --app-success: #109b64;
+  --app-success-soft: #dcf8ec;
+  --app-warning: #f59e0b;
+  --app-warning-soft: #fff2cf;
+  --app-danger: #e5484d;
+  --app-danger-soft: #ffe5e7;
+  --app-panel-gradient: linear-gradient(135deg, #eef3ff 0%, #f9f4ff 48%, #ecfff7 100%);
+  --app-card-gradient: linear-gradient(145deg, #ffffff 0%, #f7f8ff 58%, #f1fbff 100%);
+  --app-shadow: 0 22px 60px rgb(63 91 246 / 14%);
+  --app-shadow-soft: 0 12px 28px rgb(17 24 39 / 8%);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --app-bg: #0b1020;
-  --app-surface: #111827;
-  --app-surface-muted: #1e293b;
+  --app-bg: #10131f;
+  --app-surface: #171b2a;
+  --app-surface-muted: #22283b;
   --app-text: #f8fafc;
-  --app-text-muted: #a8b3c7;
-  --app-border: #293548;
-  --app-primary: #7dd3fc;
-  --app-primary-contrast: #07111f;
-  --app-primary-soft: #123247;
-  --app-success: #34d399;
-  --app-success-soft: #113f32;
-  --app-danger: #f87171;
-  --app-danger-soft: #451a1a;
-  --app-shadow: 0 18px 45px rgb(0 0 0 / 24%);
+  --app-text-muted: #a8b0c6;
+  --app-border: #30364c;
+  --app-primary: #93a5ff;
+  --app-primary-contrast: #10131f;
+  --app-primary-soft: #293050;
+  --app-success: #5ee0a2;
+  --app-success-soft: #173828;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #3b2f12;
+  --app-danger: #ff8b8f;
+  --app-danger-soft: #441f25;
+  --app-panel-gradient: linear-gradient(135deg, #171b2a 0%, #242036 52%, #132b2a 100%);
+  --app-card-gradient: linear-gradient(145deg, #1a1f30 0%, #151a28 58%, #12272d 100%);
+  --app-shadow: 0 22px 60px rgb(0 0 0 / 28%);
+  --app-shadow-soft: 0 12px 28px rgb(0 0 0 / 20%);
   color-scheme: dark;
 }
 
@@ -89,7 +112,9 @@ body {
   display: flex;
   flex-direction: column;
   color: var(--app-text);
-  background: var(--app-bg);
+  background:
+    linear-gradient(180deg, color-mix(in_srgb, var(--app-primary-soft) 55%, transparent) 0%, transparent 34rem),
+    var(--app-bg);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -117,4 +142,8 @@ select {
 
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--app-primary-soft);
 }

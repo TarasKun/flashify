@@ -288,25 +288,25 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     <section className="grid min-h-[calc(100dvh-9rem)] gap-5">
       <div className="flex items-center justify-between gap-3">
         <Link
-          className="flex items-center gap-2 text-sm font-semibold text-[var(--app-text-muted)]"
+          className="flex items-center gap-2 rounded-full bg-white/70 px-3 py-2 text-sm font-bold text-[var(--app-text-muted)] shadow-sm backdrop-blur dark:bg-white/10"
           href={`/decks/${deckId}`}
         >
           <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.3} />
           Deck
         </Link>
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
+        <span className="rounded-full bg-[var(--app-primary-soft)] px-4 py-2 text-sm font-black text-[var(--app-primary)]">
           {isLoading ? "..." : progressText}
         </span>
       </div>
 
       {isLoading ? (
-        <div className="grid min-h-80 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-sm font-medium text-[var(--app-text-muted)] shadow-sm">
+        <div className="grid min-h-80 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
         </div>
       ) : currentStudyCard ? (
         <>
           <button
-            className="flex min-h-[25rem] touch-pan-y flex-col justify-between rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-left shadow-[var(--app-shadow)]"
+            className="flex min-h-[27rem] touch-pan-y flex-col justify-between rounded-[2rem] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)]"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -317,20 +317,20 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             }}
             type="button"
           >
-            <span className="flex items-center justify-between gap-3 text-sm font-semibold text-[var(--app-text-muted)]">
+            <span className="flex items-center justify-between gap-3 text-sm font-black text-[var(--app-text-muted)]">
               <span>{isAnswerVisible ? "Answer" : "Prompt"}</span>
-              <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-xs">
+              <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs text-[var(--app-primary)]">
                 {currentStudyCard.direction === "forward"
                   ? "Question -> answer"
                   : "Answer -> question"}
               </span>
             </span>
-            <span className="whitespace-pre-wrap break-words text-3xl font-semibold leading-tight tracking-normal">
+            <span className="whitespace-pre-wrap break-words text-[2.65rem] font-black leading-[1.05] tracking-normal">
               {isAnswerVisible
                 ? getAnswerText(currentStudyCard)
                 : getPromptText(currentStudyCard)}
             </span>
-            <span className="flex items-center gap-2 text-sm font-medium text-[var(--app-text-muted)]">
+            <span className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-sm font-bold text-[var(--app-text-muted)] dark:bg-white/10">
               <RotateCcw aria-hidden="true" size={16} strokeWidth={2.2} />
               Tap to flip, swipe to answer
             </span>
@@ -338,7 +338,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
           <div className="grid grid-cols-[1fr_3.5rem_1fr] gap-3">
             <button
-              className="flex h-14 items-center justify-center gap-2 rounded-lg border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-semibold text-[var(--app-danger)] disabled:opacity-50"
+              className="flex h-14 items-center justify-center gap-2 rounded-full border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-black text-[var(--app-danger)] shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={() => submitAnswer("dontKnow")}
               disabled={isSubmitting}
               type="button"
@@ -348,7 +348,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
             <button
               aria-label="Undo"
-              className="grid size-14 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] shadow-sm disabled:opacity-40"
+              className="grid size-14 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur disabled:opacity-40 dark:bg-white/10"
               disabled={undoStack.length === 0 || isSubmitting}
               onClick={undoLastAnswer}
               title="Undo"
@@ -357,7 +357,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <Undo2 aria-hidden="true" size={20} strokeWidth={2.3} />
             </button>
             <button
-              className="flex h-14 items-center justify-center gap-2 rounded-lg bg-[var(--app-success)] px-4 font-semibold text-white shadow-sm disabled:opacity-50"
+              className="flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={() => submitAnswer("know")}
               disabled={isSubmitting}
               type="button"
@@ -367,9 +367,9 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
           </div>
 
-          <section className="grid gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
+          <section className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]">
             <button
-              className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-4 font-semibold disabled:opacity-50"
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/65 px-4 font-black disabled:opacity-50 dark:bg-white/10"
               disabled={isLoadingExplanation}
               onClick={showExplanation}
               type="button"
@@ -379,7 +379,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
 
             {isExplanationVisible ? (
-              <div className="rounded-lg bg-[var(--app-surface-muted)] p-4">
+              <div className="rounded-[var(--app-radius-md)] bg-white/60 p-4 dark:bg-white/10">
                 {explanationError ? (
                   <p className="text-sm font-medium text-[var(--app-danger)]">
                     {explanationError}
@@ -396,13 +396,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           </section>
         </>
       ) : (
-        <div className="grid gap-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center shadow-sm">
-          <p className="text-xl font-semibold">No cards due</p>
-          <p className="text-sm text-[var(--app-text-muted)]">
+        <div className="grid gap-4 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-6 text-center shadow-[var(--app-shadow)]">
+          <p className="text-2xl font-black">No cards due</p>
+          <p className="text-sm font-semibold leading-6 text-[var(--app-text-muted)]">
             Add new cards or come back when reviews are ready.
           </p>
           <Link
-            className="flex h-11 items-center justify-center rounded-lg bg-[var(--app-primary)] px-4 font-semibold text-[var(--app-primary-contrast)]"
+            className="flex h-12 items-center justify-center rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)]"
             href={`/decks/${deckId}`}
           >
             Back to deck

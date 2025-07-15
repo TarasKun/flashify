@@ -115,37 +115,37 @@ export function DeckListScreen() {
 
   return (
     <section className="grid gap-5">
-      <section className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]">
+      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[var(--app-text-muted)]">
+            <p className="text-sm font-bold text-[var(--app-primary)]">
               Today
             </p>
-            <h2 className="mt-1 truncate text-2xl font-semibold tracking-normal">
+            <h2 className="mt-2 truncate text-3xl font-black tracking-normal">
               {isLoading ? "Loading decks" : `${dueTotal} cards due`}
             </h2>
           </div>
-          <span className="shrink-0 rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
+          <span className="shrink-0 rounded-full bg-white/75 px-4 py-2 text-sm font-black text-[var(--app-primary)] shadow-sm backdrop-blur dark:bg-white/10">
             {learnedTotal}/{cardsTotal}
           </span>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
-            <p className="text-lg font-semibold">{items.length}</p>
-            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
+            <p className="text-xl font-black">{items.length}</p>
+            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
               Decks
             </p>
           </div>
-          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
-            <p className="text-lg font-semibold">{cardsTotal}</p>
-            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
+            <p className="text-xl font-black">{cardsTotal}</p>
+            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
               Cards
             </p>
           </div>
-          <div className="rounded-lg bg-[var(--app-surface-muted)] px-2 py-3">
-            <p className="text-lg font-semibold">{learnedTotal}</p>
-            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
+          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
+            <p className="text-xl font-black">{learnedTotal}</p>
+            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
               Learned
             </p>
           </div>
@@ -153,7 +153,7 @@ export function DeckListScreen() {
 
         <Link
           aria-disabled={!items[0]}
-          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-4 text-base font-semibold text-[var(--app-primary-contrast)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
           href={items[0] ? `/decks/${items[0].deck.id}/study` : "/"}
         >
           <Play aria-hidden="true" size={19} strokeWidth={2.4} />
@@ -163,7 +163,7 @@ export function DeckListScreen() {
 
       <section>
         <form
-          className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+          className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={createDeck}
         >
           <label
@@ -174,7 +174,7 @@ export function DeckListScreen() {
           </label>
           <div className="mt-2 flex gap-2">
             <input
-              className="h-12 min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-3 text-base outline-none transition focus:border-[var(--app-primary)]"
+              className="h-12 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-base font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="new-deck-name"
               onChange={(event) => setNewDeckName(event.target.value)}
               placeholder="Deck name"
@@ -182,7 +182,7 @@ export function DeckListScreen() {
             />
             <button
               aria-label="Create deck"
-              className="grid size-11 shrink-0 place-items-center rounded-lg bg-[var(--app-primary)] text-[var(--app-primary-contrast)]"
+              className="grid size-12 shrink-0 place-items-center rounded-full bg-[var(--app-primary)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)]"
               type="submit"
             >
               <Plus aria-hidden="true" size={21} strokeWidth={2.4} />
@@ -201,8 +201,8 @@ export function DeckListScreen() {
 
         <div className="grid gap-3">
           {!isLoading && items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-center">
-              <p className="font-semibold">No decks yet</p>
+            <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[var(--app-card-gradient)] p-5 text-center shadow-[var(--app-shadow-soft)]">
+              <p className="font-black">No decks yet</p>
               <p className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
                 Create a deck first, then add cards manually or import text.
               </p>
@@ -217,7 +217,7 @@ export function DeckListScreen() {
 
             return (
               <article
-                className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
+                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
                 key={item.deck.id}
               >
                 {editingDeckId === item.deck.id ? (
@@ -252,19 +252,19 @@ export function DeckListScreen() {
                         className="min-w-0 flex-1"
                         href={`/decks/${item.deck.id}`}
                       >
-                        <h3 className="truncate text-base font-semibold">
+                        <h3 className="truncate text-lg font-black">
                           {item.deck.name}
                         </h3>
-                        <p className="mt-1 text-sm text-[var(--app-text-muted)]">
+                        <p className="mt-1 text-sm font-semibold text-[var(--app-text-muted)]">
                           {item.progress.learned}/{item.progress.total} learned
                         </p>
                       </Link>
-                      <span className="shrink-0 rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-primary)]">
+                      <span className="shrink-0 rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-sm font-black text-[var(--app-primary)]">
                         {item.dueCount} due
                       </span>
                     </div>
 
-                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--app-surface-muted)]">
+                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[var(--app-surface-muted)]">
                       <div
                         className="h-full rounded-full bg-[var(--app-primary)]"
                         style={{ width: progressPercent }}
@@ -273,7 +273,7 @@ export function DeckListScreen() {
 
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <Link
-                        className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[var(--app-surface-muted)] px-3 text-sm font-semibold"
+                        className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-primary-soft)] px-4 text-sm font-black text-[var(--app-primary)]"
                         href={`/decks/${item.deck.id}/study`}
                       >
                         <Play aria-hidden="true" size={16} strokeWidth={2.4} />
@@ -282,7 +282,7 @@ export function DeckListScreen() {
                       <div className="flex gap-2">
                       <button
                         aria-label={`Rename ${item.deck.name}`}
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)]"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
                         onClick={() => startEditing(item.deck)}
                         title="Rename"
                         type="button"
@@ -291,7 +291,7 @@ export function DeckListScreen() {
                       </button>
                       <button
                         aria-label={`Delete ${item.deck.name}`}
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] text-[var(--app-danger)]"
+                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
                         onClick={() => deleteDeck(item.deck)}
                         title="Delete"
                         type="button"
