@@ -163,7 +163,7 @@ export function DeckListScreen() {
 
       <section>
         <form
-          className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+          className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={createDeck}
         >
           <label
@@ -201,7 +201,7 @@ export function DeckListScreen() {
 
         <div className="grid gap-3">
           {!isLoading && items.length === 0 ? (
-            <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[var(--app-card-gradient)] p-5 text-center shadow-[var(--app-shadow-soft)]">
+            <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 text-center shadow-[var(--app-shadow-soft)]">
               <p className="font-black">No decks yet</p>
               <p className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
                 Create a deck first, then add cards manually or import text.
@@ -217,13 +217,13 @@ export function DeckListScreen() {
 
             return (
               <article
-                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
                 key={item.deck.id}
               >
                 {editingDeckId === item.deck.id ? (
                   <form className="grid gap-3" onSubmit={saveDeckName}>
                     <input
-                      className="h-11 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] px-3 text-base outline-none focus:border-[var(--app-primary)]"
+                      className="h-11 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-base outline-none focus:border-[var(--app-primary)] dark:bg-white/10"
                       onChange={(event) =>
                         setEditingDeckName(event.target.value)
                       }
@@ -231,13 +231,13 @@ export function DeckListScreen() {
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        className="h-10 rounded-lg bg-[var(--app-primary)] px-3 text-sm font-semibold text-[var(--app-primary-contrast)]"
+                        className="h-10 rounded-full bg-[var(--app-primary)] px-3 text-sm font-black text-[var(--app-primary-contrast)]"
                         type="submit"
                       >
                         Save
                       </button>
                       <button
-                        className="h-10 rounded-lg border border-[var(--app-border)] px-3 text-sm font-semibold"
+                        className="h-10 rounded-full border border-[var(--app-border)] bg-white/60 px-3 text-sm font-black dark:bg-white/10"
                         onClick={() => setEditingDeckId(null)}
                         type="button"
                       >
@@ -280,24 +280,32 @@ export function DeckListScreen() {
                         Study
                       </Link>
                       <div className="flex gap-2">
-                      <button
-                        aria-label={`Rename ${item.deck.name}`}
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
-                        onClick={() => startEditing(item.deck)}
-                        title="Rename"
-                        type="button"
-                      >
-                        <Pencil aria-hidden="true" size={17} strokeWidth={2.2} />
-                      </button>
-                      <button
-                        aria-label={`Delete ${item.deck.name}`}
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
-                        onClick={() => deleteDeck(item.deck)}
-                        title="Delete"
-                        type="button"
-                      >
-                        <Trash2 aria-hidden="true" size={17} strokeWidth={2.2} />
-                      </button>
+                        <button
+                          aria-label={`Rename ${item.deck.name}`}
+                          className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
+                          onClick={() => startEditing(item.deck)}
+                          title="Rename"
+                          type="button"
+                        >
+                          <Pencil
+                            aria-hidden="true"
+                            size={17}
+                            strokeWidth={2.2}
+                          />
+                        </button>
+                        <button
+                          aria-label={`Delete ${item.deck.name}`}
+                          className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
+                          onClick={() => deleteDeck(item.deck)}
+                          title="Delete"
+                          type="button"
+                        >
+                          <Trash2
+                            aria-hidden="true"
+                            size={17}
+                            strokeWidth={2.2}
+                          />
+                        </button>
                       </div>
                     </div>
                   </>

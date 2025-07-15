@@ -300,13 +300,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       </div>
 
       {isLoading ? (
-        <div className="grid min-h-80 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
+        <div className="grid min-h-80 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
         </div>
       ) : currentStudyCard ? (
         <>
           <button
-            className="flex min-h-[27rem] touch-pan-y flex-col justify-between rounded-[2rem] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)]"
+            className="flex min-h-[27rem] touch-pan-y flex-col justify-between rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)] dark:border-white/10"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -325,7 +325,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
                   : "Answer -> question"}
               </span>
             </span>
-            <span className="whitespace-pre-wrap break-words text-[2.65rem] font-black leading-[1.05] tracking-normal">
+            <span className="whitespace-pre-wrap break-words text-[2.35rem] font-black leading-[1.08] tracking-normal">
               {isAnswerVisible
                 ? getAnswerText(currentStudyCard)
                 : getPromptText(currentStudyCard)}
@@ -367,7 +367,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
           </div>
 
-          <section className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]">
+          <section className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]">
             <button
               className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/65 px-4 font-black disabled:opacity-50 dark:bg-white/10"
               disabled={isLoadingExplanation}

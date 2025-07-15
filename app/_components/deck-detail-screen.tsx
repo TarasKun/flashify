@@ -284,7 +284,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   if (isLoading) {
     return (
-      <section className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 shadow-[var(--app-shadow-soft)]">
         <p className="text-sm font-medium text-[var(--app-text-muted)]">
           Loading deck
         </p>
@@ -294,10 +294,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   if (!deck) {
     return (
-      <section className="grid gap-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-        <p className="font-semibold">Deck not found</p>
+      <section className="grid gap-4 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 shadow-[var(--app-shadow-soft)]">
+        <p className="font-black">Deck not found</p>
         <Link
-          className="flex h-11 items-center justify-center rounded-lg bg-[var(--app-primary)] px-4 font-semibold text-[var(--app-primary-contrast)]"
+          className="flex h-12 items-center justify-center rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)]"
           href="/"
         >
           Back to decks
@@ -402,7 +402,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <section className="grid grid-cols-2 gap-3">
         <button
-          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
           onClick={() => setIsAddingCard((currentValue) => !currentValue)}
           type="button"
         >
@@ -415,7 +415,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <span>Add card</span>
         </button>
         <button
-          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
           onClick={() => setIsImportingText((currentValue) => !currentValue)}
           type="button"
         >
@@ -431,7 +431,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isAddingCard ? (
         <form
-          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={createCard}
         >
           <div>
@@ -468,14 +468,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--app-primary)] px-3 font-semibold text-[var(--app-primary-contrast)]"
+              className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-3 font-black text-[var(--app-primary-contrast)]"
               type="submit"
             >
               <Check aria-hidden="true" size={18} strokeWidth={2.3} />
               Save
             </button>
             <button
-              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--app-border)] px-3 font-semibold"
+              className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-3 font-black dark:bg-white/10"
               onClick={() => setIsAddingCard(false)}
               type="button"
             >
@@ -488,7 +488,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isImportingText ? (
         <form
-          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
           onSubmit={previewImportCards}
         >
           <div>
@@ -621,14 +621,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-sm text-[var(--app-text-muted)]">
+          <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 text-sm font-semibold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
             No cards yet.
           </div>
         ) : (
           <div className="grid gap-3">
             {cards.map((card) => (
               <article
-                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
                 key={card.id}
               >
                 {editingCardId === card.id ? (

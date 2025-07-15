@@ -33,7 +33,7 @@ export function ThemeToggle() {
   return (
     <button
       aria-label={label}
-      className="grid size-12 place-items-center rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_88%,transparent)] text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur"
+      className="grid size-12 place-items-center rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
       onClick={toggleTheme}
       title={label}
       type="button"
@@ -64,9 +64,7 @@ function getThemeSnapshot(): ThemeMode {
     return savedTheme;
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return "light";
 }
 
 function getServerThemeSnapshot(): ThemeMode {
