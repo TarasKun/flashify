@@ -15,6 +15,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
   type PointerEvent,
 } from "react";
 import {
@@ -54,6 +55,8 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartXRef = useRef<number | null>(null);
+  const dragLastOffsetRef = useRef(0);
+  const hasDraggedRef = useRef(false);
 
   const loadStudyCards = useCallback(async () => {
     setIsLoading(true);
@@ -96,23 +99,27 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       }
 
       setIsSubmitting(true);
-      const updatedCard = answerCard({
-        card: currentStudyCard.card,
-        direction: currentStudyCard.direction,
-        answer,
-        now: new Date(),
-      });
 
-      setUndoStack((currentStack) => [
-        ...currentStack,
-        {
+      try {
+        const updatedCard = answerCard({
           card: currentStudyCard.card,
-        },
-      ]);
-      await storage.saveCardProgress(updatedCard);
-      await loadStudyCards();
-      setDragOffset(0);
-      setIsSubmitting(false);
+          direction: currentStudyCard.direction,
+          answer,
+          now: new Date(),
+        });
+
+        setUndoStack((currentStack) => [
+          ...currentStack,
+          {
+            card: currentStudyCard.card,
+          },
+        ]);
+        await storage.saveCardProgress(updatedCard);
+        await loadStudyCards();
+        setDragOffset(0);
+      } finally {
+        setIsSubmitting(false);
+      }
     },
     [currentStudyCard, isSubmitting, loadStudyCards, storage],
   );
@@ -198,7 +205,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (isEditableTarget(event.target)) {
+      if (isInteractiveTarget(event.target)) {
         return;
       }
 
@@ -234,42 +241,82 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [submitAnswer, undoLastAnswer]);
 
-  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
     dragStartXRef.current = event.clientX;
+    dragLastOffsetRef.current = 0;
+    hasDraggedRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     if (dragStartXRef.current === null) {
       return;
     }
 
-    setDragOffset(event.clientX - dragStartXRef.current);
+    const nextOffset = event.clientX - dragStartXRef.current;
+
+    dragLastOffsetRef.current = nextOffset;
+    hasDraggedRef.current =
+      hasDraggedRef.current || Math.abs(nextOffset) > TAP_THRESHOLD;
+    setDragOffset(nextOffset);
+
+    if (Math.abs(nextOffset) > TAP_THRESHOLD) {
+      event.preventDefault();
+    }
   }
 
-  function handlePointerUp(event: PointerEvent<HTMLButtonElement>) {
+  function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
     if (dragStartXRef.current === null) {
       return;
     }
 
     const offset = event.clientX - dragStartXRef.current;
+    const wasTap = !hasDraggedRef.current && Math.abs(offset) <= TAP_THRESHOLD;
 
-    dragStartXRef.current = null;
-    setDragOffset(0);
+    resetDragState(event);
 
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
       void submitAnswer(offset > 0 ? "know" : "dontKnow");
       return;
     }
 
-    if (Math.abs(offset) <= TAP_THRESHOLD) {
+    if (wasTap) {
       setIsAnswerVisible((currentValue) => !currentValue);
     }
   }
 
-  function handlePointerCancel() {
+  function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
+    const offset = dragLastOffsetRef.current;
+
+    resetDragState(event);
+
+    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+      void submitAnswer(offset > 0 ? "know" : "dontKnow");
+    }
+  }
+
+  function resetDragState(event: PointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
     dragStartXRef.current = null;
+    dragLastOffsetRef.current = 0;
+    hasDraggedRef.current = false;
     setDragOffset(0);
+  }
+
+  function handleAnswerClick(
+    event: MouseEvent<HTMLButtonElement>,
+    answer: "know" | "dontKnow",
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    void submitAnswer(answer);
   }
 
   function getPromptText(studyCard: StudyCard): string {
@@ -305,17 +352,19 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         </div>
       ) : currentStudyCard ? (
         <>
-          <button
-            className="flex min-h-[27rem] touch-pan-y flex-col justify-between rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)] dark:border-white/10"
+          <div
+            aria-label="Flashcard"
+            className="flex min-h-[27rem] touch-none select-none flex-col justify-between rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)] dark:border-white/10"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
+            role="button"
             style={{
               transform: `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`,
               transition: dragOffset === 0 ? "transform 160ms ease" : "none",
             }}
-            type="button"
+            tabIndex={0}
           >
             <span className="flex items-center justify-between gap-3 text-sm font-black text-[var(--app-text-muted)]">
               <span>{isAnswerVisible ? "Answer" : "Prompt"}</span>
@@ -334,12 +383,12 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <RotateCcw aria-hidden="true" size={16} strokeWidth={2.2} />
               Tap to flip, swipe to answer
             </span>
-          </button>
+          </div>
 
           <div className="grid grid-cols-[1fr_3.5rem_1fr] gap-3">
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-black text-[var(--app-danger)] shadow-[var(--app-shadow-soft)] disabled:opacity-50"
-              onClick={() => submitAnswer("dontKnow")}
+              onClick={(event) => handleAnswerClick(event, "dontKnow")}
               disabled={isSubmitting}
               type="button"
             >
@@ -358,7 +407,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white shadow-[var(--app-shadow-soft)] disabled:opacity-50"
-              onClick={() => submitAnswer("know")}
+              onClick={(event) => handleAnswerClick(event, "know")}
               disabled={isSubmitting}
               type="button"
             >
@@ -413,7 +462,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   );
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
+function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
@@ -424,6 +473,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
     tagName === "input" ||
     tagName === "textarea" ||
     tagName === "select" ||
+    tagName === "button" ||
+    tagName === "a" ||
     target.isContentEditable
   );
 }

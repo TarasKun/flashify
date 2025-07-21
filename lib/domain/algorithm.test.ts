@@ -267,7 +267,7 @@ describe("learning algorithm", () => {
     expect(updatedCard.progress).toEqual(createEmptyCardProgress());
   });
 
-  it("prioritizes due cards over learning and new cards in the active pool", () => {
+  it("prioritizes due cards and keeps recently answered active cards later", () => {
     const overdueResting = makeCard({
       id: "overdue-resting",
       status: "resting",
@@ -306,8 +306,8 @@ describe("learning algorithm", () => {
     expect(pool.map((card) => card.id)).toEqual([
       "overdue-resting",
       "due-review",
-      "learning",
       "new",
+      "learning",
     ]);
   });
 

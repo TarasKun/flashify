@@ -159,7 +159,7 @@ function getStudyPriority(card: Card, now: Date): StudyPriority {
   }
 
   if (card.status === "new") {
-    return 3;
+    return 2;
   }
 
   return 4;
