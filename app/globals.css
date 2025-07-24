@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --app-bg: #f8f9ff;
   --app-surface: #ffffff;
@@ -31,28 +33,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --app-bg: #10131f;
-    --app-surface: #171b2a;
-    --app-surface-muted: #22283b;
-    --app-text: #f8fafc;
-    --app-text-muted: #a8b0c6;
-    --app-border: #30364c;
-    --app-primary: #93a5ff;
-    --app-primary-contrast: #10131f;
-    --app-primary-soft: #293050;
-    --app-success: #5ee0a2;
-    --app-success-soft: #173828;
+    --app-bg: #0d1020;
+    --app-surface: #171f33;
+    --app-surface-muted: #26324a;
+    --app-text: #f8fbff;
+    --app-text-muted: #c8d1e3;
+    --app-border: #3d4b66;
+    --app-primary: #b2c1ff;
+    --app-primary-contrast: #11172b;
+    --app-primary-soft: #273761;
+    --app-success: #77e6b0;
+    --app-success-soft: #173f2d;
     --app-warning: #fbbf24;
     --app-warning-soft: #3b2f12;
-    --app-danger: #ff8b8f;
-    --app-danger-soft: #441f25;
-    --app-panel-gradient: linear-gradient(155deg, #171b2a 0%, #27223c 52%, #102b28 100%);
-    --app-card-gradient: linear-gradient(145deg, #1b2032 0%, #161b2b 54%, #112a31 100%);
+    --app-danger: #ff9fa4;
+    --app-danger-soft: #4b2029;
+    --app-panel-gradient: linear-gradient(155deg, #18233a 0%, #2c2745 52%, #12362f 100%);
+    --app-card-gradient: linear-gradient(145deg, #202a40 0%, #192237 54%, #132f37 100%);
     --app-screen-gradient:
-      radial-gradient(circle at 1px 1px, rgb(147 165 255 / 10%) 1px, transparent 0),
-      linear-gradient(180deg, #111522 0%, #10131f 46%, #111d2a 100%);
-    --app-shadow: 0 22px 60px rgb(0 0 0 / 28%);
-    --app-shadow-soft: 0 12px 28px rgb(0 0 0 / 20%);
+      radial-gradient(circle at 1px 1px, rgb(178 193 255 / 13%) 1px, transparent 0),
+      linear-gradient(180deg, #10162a 0%, #0d1020 48%, #102534 100%);
+    --app-shadow: 0 24px 70px rgb(0 0 0 / 38%);
+    --app-shadow-soft: 0 14px 34px rgb(0 0 0 / 30%);
     color-scheme: dark;
   }
 }
@@ -84,28 +86,28 @@
 }
 
 [data-theme="dark"] {
-  --app-bg: #10131f;
-  --app-surface: #171b2a;
-  --app-surface-muted: #22283b;
-  --app-text: #f8fafc;
-  --app-text-muted: #a8b0c6;
-  --app-border: #30364c;
-  --app-primary: #93a5ff;
-  --app-primary-contrast: #10131f;
-  --app-primary-soft: #293050;
-  --app-success: #5ee0a2;
-  --app-success-soft: #173828;
+  --app-bg: #0d1020;
+  --app-surface: #171f33;
+  --app-surface-muted: #26324a;
+  --app-text: #f8fbff;
+  --app-text-muted: #c8d1e3;
+  --app-border: #3d4b66;
+  --app-primary: #b2c1ff;
+  --app-primary-contrast: #11172b;
+  --app-primary-soft: #273761;
+  --app-success: #77e6b0;
+  --app-success-soft: #173f2d;
   --app-warning: #fbbf24;
   --app-warning-soft: #3b2f12;
-  --app-danger: #ff8b8f;
-  --app-danger-soft: #441f25;
-  --app-panel-gradient: linear-gradient(155deg, #171b2a 0%, #27223c 52%, #102b28 100%);
-  --app-card-gradient: linear-gradient(145deg, #1b2032 0%, #161b2b 54%, #112a31 100%);
+  --app-danger: #ff9fa4;
+  --app-danger-soft: #4b2029;
+  --app-panel-gradient: linear-gradient(155deg, #18233a 0%, #2c2745 52%, #12362f 100%);
+  --app-card-gradient: linear-gradient(145deg, #202a40 0%, #192237 54%, #132f37 100%);
   --app-screen-gradient:
-    radial-gradient(circle at 1px 1px, rgb(147 165 255 / 10%) 1px, transparent 0),
-    linear-gradient(180deg, #111522 0%, #10131f 46%, #111d2a 100%);
-  --app-shadow: 0 22px 60px rgb(0 0 0 / 28%);
-  --app-shadow-soft: 0 12px 28px rgb(0 0 0 / 20%);
+    radial-gradient(circle at 1px 1px, rgb(178 193 255 / 13%) 1px, transparent 0),
+    linear-gradient(180deg, #10162a 0%, #0d1020 48%, #102534 100%);
+  --app-shadow: 0 24px 70px rgb(0 0 0 / 38%);
+  --app-shadow-soft: 0 14px 34px rgb(0 0 0 / 30%);
   color-scheme: dark;
 }
 

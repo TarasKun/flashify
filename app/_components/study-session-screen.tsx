@@ -58,16 +58,19 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const dragLastOffsetRef = useRef(0);
   const hasDraggedRef = useRef(false);
 
-  const loadStudyCards = useCallback(async () => {
+  const loadStudyCards = useCallback(async (preferredCardId?: string) => {
     setIsLoading(true);
     const studyCards = await storage.listStudyCards({
       deckId,
       now: new Date(),
     });
     const activePool = selectActivePool(studyCards, new Date());
+    const orderedPool = preferredCardId
+      ? moveCardToFront(activePool, preferredCardId)
+      : activePool;
 
     setCards(
-      activePool.map((card) => ({
+      orderedPool.map((card) => ({
         card,
         direction: getNextStudyDirection(card),
       })),
@@ -132,11 +135,15 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     }
 
     setIsSubmitting(true);
-    await storage.saveCardProgress(previousEntry.card);
-    setUndoStack((currentStack) => currentStack.slice(0, -1));
-    await loadStudyCards();
-    setDragOffset(0);
-    setIsSubmitting(false);
+
+    try {
+      await storage.saveCardProgress(previousEntry.card);
+      setUndoStack((currentStack) => currentStack.slice(0, -1));
+      await loadStudyCards(previousEntry.card.id);
+      setDragOffset(0);
+    } finally {
+      setIsSubmitting(false);
+    }
   }, [isSubmitting, loadStudyCards, storage, undoStack]);
 
   const showExplanation = useCallback(async () => {
@@ -477,4 +484,17 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
     tagName === "a" ||
     target.isContentEditable
   );
+}
+
+function moveCardToFront(cards: Card[], cardId: string): Card[] {
+  const cardIndex = cards.findIndex((card) => card.id === cardId);
+
+  if (cardIndex <= 0) {
+    return cards;
+  }
+
+  const nextCards = [...cards];
+  const [card] = nextCards.splice(cardIndex, 1);
+
+  return [card, ...nextCards];
 }
