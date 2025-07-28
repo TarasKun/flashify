@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   Check,
+  Clipboard,
   X,
   FileInput,
   Pencil,
@@ -14,17 +15,32 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Card, Deck } from "@/lib/domain";
+import { parseImportJson, type ImportCardDraft } from "@/lib/domain/import-cards";
 import { createIndexedDbStorage, type DeckProgress } from "@/lib/storage";
 
 type DeckDetailScreenProps = {
   deckId: string;
 };
 
-type ImportPreviewCard = {
-  id: string;
-  question: string;
-  answer: string;
-};
+const AI_JSON_PROMPT = `Convert this vocabulary or flashcard content into valid JSON.
+
+Return only JSON, no markdown, no comments.
+
+Accepted format:
+[
+  {
+    "question": "word, phrase, or question to study",
+    "answer": "translation or answer",
+    "explanation": "short explanation or example sentence, optional"
+  }
+]
+
+Rules:
+- question and answer are required strings.
+- explanation is optional. Omit it if there is no useful explanation.
+- Do not add extra fields.
+- Do not wrap the JSON in markdown.
+- Preserve the original meaning.`;
 
 export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const router = useRouter();
@@ -41,9 +57,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isImportingText, setIsImportingText] = useState(false);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
+  const [hasCopiedImportPrompt, setHasCopiedImportPrompt] = useState(false);
   const [isImportingCards, setIsImportingCards] = useState(false);
   const [importPreviewCards, setImportPreviewCards] = useState<
-    ImportPreviewCard[]
+    ImportCardDraft[]
   >([]);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState("");
@@ -145,6 +162,17 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     setIsImportingCards(true);
 
     try {
+      const jsonCards = parseImportJson(text);
+
+      if (jsonCards) {
+        if (jsonCards.length === 0) {
+          throw new Error("No valid cards were found in this JSON.");
+        }
+
+        setImportPreviewCards(jsonCards);
+        return;
+      }
+
       const response = await fetch("/api/ai/parse-cards", {
         method: "POST",
         headers: {
@@ -170,6 +198,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           id: crypto.randomUUID(),
           question: typeof card.question === "string" ? card.question.trim() : "",
           answer: typeof card.answer === "string" ? card.answer.trim() : "",
+          explanation:
+            typeof card.explanation === "string" ? card.explanation.trim() : "",
         }))
         .filter((card) => card.question && card.answer);
 
@@ -189,7 +219,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   function updateImportPreviewCard(
     id: string,
-    field: "question" | "answer",
+    field: "question" | "answer" | "explanation",
     value: string,
   ) {
     setImportPreviewCards((currentCards) =>
@@ -210,6 +240,16 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     );
   }
 
+  async function copyImportPrompt() {
+    try {
+      await copyTextToClipboard(AI_JSON_PROMPT);
+      setHasCopiedImportPrompt(true);
+      window.setTimeout(() => setHasCopiedImportPrompt(false), 1800);
+    } catch {
+      setImportError("Could not copy prompt.");
+    }
+  }
+
   async function saveImportPreview() {
     if (!deck || isImportingCards) {
       return;
@@ -220,7 +260,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         deckId: deck.id,
         question: card.question.trim(),
         answer: card.answer.trim(),
-        explanation: "",
+        explanation: card.explanation.trim(),
       }))
       .filter((card) => card.question && card.answer);
 
@@ -496,7 +536,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               className="text-sm font-medium text-[var(--app-text-muted)]"
               htmlFor="import-text"
             >
-              Text to import
+              Text or JSON to import
             </label>
             <textarea
               className="mt-2 min-h-40 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
@@ -506,7 +546,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 setImportPreviewCards([]);
                 setImportError("");
               }}
-              placeholder="What is a DTO?&#10;DTO means Data Transfer Object.&#10;Why are DTOs used?&#10;They make request data explicit."
+              placeholder='[
+  {
+    "question": "cat",
+    "answer": "кіт",
+    "explanation": "A common domestic animal."
+  }
+]'
               value={importText}
             />
           </div>
@@ -517,27 +563,37 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             </p>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2">
             <button
-              className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
-              disabled={isImportingCards || !importText.trim()}
-              type="submit"
-            >
-              <FileInput aria-hidden="true" size={18} strokeWidth={2.3} />
-              {isImportingCards ? "Parsing" : "Preview"}
-            </button>
-            <button
-              className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
-              onClick={() => {
-                setIsImportingText(false);
-                setImportPreviewCards([]);
-                setImportError("");
-              }}
+              className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
+              onClick={copyImportPrompt}
               type="button"
             >
-              <X aria-hidden="true" size={18} strokeWidth={2.3} />
-              Cancel
+              <Clipboard aria-hidden="true" size={17} strokeWidth={2.3} />
+              {hasCopiedImportPrompt ? "Copied" : "Copy AI prompt"}
             </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
+                disabled={isImportingCards || !importText.trim()}
+                type="submit"
+              >
+                <FileInput aria-hidden="true" size={18} strokeWidth={2.3} />
+                {isImportingCards ? "Parsing" : "Preview"}
+              </button>
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
+                onClick={() => {
+                  setIsImportingText(false);
+                  setImportPreviewCards([]);
+                  setImportError("");
+                }}
+                type="button"
+              >
+                <X aria-hidden="true" size={18} strokeWidth={2.3} />
+                Cancel
+              </button>
+            </div>
           </div>
 
           {importPreviewCards.length > 0 ? (
@@ -593,6 +649,19 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                         )
                       }
                       value={card.answer}
+                    />
+                    <textarea
+                      aria-label={`Explanation for card ${index + 1}`}
+                      className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-sm outline-none transition focus:border-[var(--app-primary)]"
+                      onChange={(event) =>
+                        updateImportPreviewCard(
+                          card.id,
+                          "explanation",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Optional explanation"
+                      value={card.explanation}
                     />
                   </article>
                 ))}
@@ -707,4 +776,38 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       </section>
     </section>
   );
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Some embedded browsers expose the Clipboard API but deny writes.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.top = "0";
+  textarea.style.left = "0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
+  textarea.style.opacity = "0.01";
+  document.body.append(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, text.length);
+
+  const didCopy = document.execCommand("copy");
+
+  textarea.remove();
+
+  if (!didCopy) {
+    throw new Error("Copy failed.");
+  }
 }
