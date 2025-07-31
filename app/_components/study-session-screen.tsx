@@ -3,7 +3,6 @@
 import {
   ArrowLeft,
   Check,
-  RotateCcw,
   Sparkles,
   Undo2,
   X,
@@ -40,8 +39,11 @@ type UndoEntry = {
   card: Card;
 };
 
+type StudyAnswer = "know" | "dontKnow";
+
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
+const ANSWER_ANIMATION_MS = 380;
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -53,10 +55,17 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [explanationError, setExplanationError] = useState("");
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [sessionTotal, setSessionTotal] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
+  const [answerAnimation, setAnswerAnimation] = useState<StudyAnswer | null>(
+    null,
+  );
   const dragStartXRef = useRef<number | null>(null);
   const dragLastOffsetRef = useRef(0);
   const hasDraggedRef = useRef(false);
+  const sessionTotalRef = useRef(0);
+  const answerTimerRef = useRef<number | null>(null);
 
   const loadStudyCards = useCallback(async (preferredCardId?: string) => {
     setIsLoading(true);
@@ -68,6 +77,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     const orderedPool = preferredCardId
       ? moveCardToFront(activePool, preferredCardId)
       : activePool;
+
+    if (sessionTotalRef.current === 0) {
+      sessionTotalRef.current = orderedPool.length;
+      setSessionTotal(orderedPool.length);
+    }
 
     setCards(
       orderedPool.map((card) => ({
@@ -89,19 +103,29 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     return () => window.clearTimeout(timeoutId);
   }, [loadStudyCards]);
 
+  useEffect(() => {
+    return () => {
+      if (answerTimerRef.current !== null) {
+        window.clearTimeout(answerTimerRef.current);
+      }
+    };
+  }, []);
+
   const currentStudyCard = cards[0] ?? null;
-  const progressText = currentStudyCard
-    ? `1/${cards.length}`
-    : cards.length.toString();
+  const visibleSessionTotal = Math.max(sessionTotal, cards.length);
+  const progressText =
+    visibleSessionTotal === 0
+      ? "0"
+      : currentStudyCard
+        ? `${Math.min(answeredCount + 1, visibleSessionTotal)}/${visibleSessionTotal}`
+        : `${Math.min(answeredCount, visibleSessionTotal)}/${visibleSessionTotal}`;
   const currentExplanation = currentStudyCard?.card.explanation.trim() ?? "";
 
   const submitAnswer = useCallback(
-    async (answer: "know" | "dontKnow") => {
-      if (!currentStudyCard || isSubmitting) {
+    async (answer: StudyAnswer) => {
+      if (!currentStudyCard) {
         return;
       }
-
-      setIsSubmitting(true);
 
       try {
         const updatedCard = answerCard({
@@ -119,12 +143,33 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         ]);
         await storage.saveCardProgress(updatedCard);
         await loadStudyCards();
+        setAnsweredCount((currentCount) =>
+          Math.min(currentCount + 1, Math.max(sessionTotalRef.current, 1)),
+        );
         setDragOffset(0);
       } finally {
+        setAnswerAnimation(null);
         setIsSubmitting(false);
       }
     },
-    [currentStudyCard, isSubmitting, loadStudyCards, storage],
+    [currentStudyCard, loadStudyCards, storage],
+  );
+
+  const answerWithAnimation = useCallback(
+    (answer: StudyAnswer) => {
+      if (!currentStudyCard || isSubmitting || answerAnimation) {
+        return;
+      }
+
+      setIsSubmitting(true);
+      setAnswerAnimation(answer);
+
+      answerTimerRef.current = window.setTimeout(() => {
+        answerTimerRef.current = null;
+        void submitAnswer(answer);
+      }, ANSWER_ANIMATION_MS);
+    },
+    [answerAnimation, currentStudyCard, isSubmitting, submitAnswer],
   );
 
   const undoLastAnswer = useCallback(async () => {
@@ -140,6 +185,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       await storage.saveCardProgress(previousEntry.card);
       setUndoStack((currentStack) => currentStack.slice(0, -1));
       await loadStudyCards(previousEntry.card.id);
+      setAnsweredCount((currentCount) => Math.max(0, currentCount - 1));
       setDragOffset(0);
     } finally {
       setIsSubmitting(false);
@@ -224,13 +270,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        void submitAnswer("know");
+        answerWithAnimation("know");
         return;
       }
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        void submitAnswer("dontKnow");
+        answerWithAnimation("dontKnow");
         return;
       }
 
@@ -246,7 +292,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [submitAnswer, undoLastAnswer]);
+  }, [answerWithAnimation, undoLastAnswer]);
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType === "mouse" && event.button !== 0) {
@@ -287,7 +333,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     resetDragState(event);
 
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
-      void submitAnswer(offset > 0 ? "know" : "dontKnow");
+      answerWithAnimation(offset > 0 ? "know" : "dontKnow");
       return;
     }
 
@@ -302,7 +348,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     resetDragState(event);
 
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
-      void submitAnswer(offset > 0 ? "know" : "dontKnow");
+      answerWithAnimation(offset > 0 ? "know" : "dontKnow");
     }
   }
 
@@ -319,11 +365,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
   function handleAnswerClick(
     event: MouseEvent<HTMLButtonElement>,
-    answer: "know" | "dontKnow",
+    answer: StudyAnswer,
   ) {
     event.preventDefault();
     event.stopPropagation();
-    void submitAnswer(answer);
+    answerWithAnimation(answer);
   }
 
   function getPromptText(studyCard: StudyCard): string {
@@ -337,6 +383,21 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       ? studyCard.card.answer
       : studyCard.card.question;
   }
+
+  const animationDirection =
+    answerAnimation === "know" ? 1 : answerAnimation === "dontKnow" ? -1 : 0;
+  const activeOffset =
+    animationDirection !== 0 ? animationDirection * SWIPE_THRESHOLD : dragOffset;
+  const tintIntensity =
+    animationDirection !== 0
+      ? 1
+      : Math.min(Math.abs(activeOffset) / SWIPE_THRESHOLD, 1);
+  const tintColor =
+    activeOffset >= 0 ? "16 155 100" : "229 72 77";
+  const cardTransform =
+    animationDirection !== 0
+      ? `translate3d(${animationDirection * 115}vw, -9rem, 0) rotate(${animationDirection * 24}deg) scale(0.96)`
+      : `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`;
 
   return (
     <section className="grid min-h-[calc(100dvh-9rem)] gap-5">
@@ -361,35 +422,53 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <>
           <div
             aria-label="Flashcard"
-            className="flex min-h-[27rem] touch-none select-none flex-col justify-between rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] p-6 text-left shadow-[var(--app-shadow)] dark:border-white/10"
+            className="flashcard-perspective min-h-[27rem] touch-none select-none rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-left shadow-[var(--app-shadow)] dark:border-white/10"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             role="button"
             style={{
-              transform: `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`,
-              transition: dragOffset === 0 ? "transform 160ms ease" : "none",
+              backgroundImage: `linear-gradient(rgba(${tintColor} / ${tintIntensity * 0.34}), rgba(${tintColor} / ${tintIntensity * 0.2})), var(--app-card-gradient)`,
+              borderColor:
+                activeOffset === 0
+                  ? undefined
+                  : `rgba(${tintColor} / ${0.28 + tintIntensity * 0.42})`,
+              opacity: animationDirection !== 0 ? 0 : 1,
+              transform: cardTransform,
+              transition:
+                animationDirection !== 0
+                  ? `transform ${ANSWER_ANIMATION_MS}ms cubic-bezier(0.19, 1, 0.22, 1), opacity ${ANSWER_ANIMATION_MS}ms ease`
+                  : dragOffset === 0
+                    ? "transform 160ms ease, background-color 160ms ease, border-color 160ms ease"
+                    : "none",
             }}
             tabIndex={0}
           >
-            <span className="flex items-center justify-between gap-3 text-sm font-black text-[var(--app-text-muted)]">
-              <span>{isAnswerVisible ? "Answer" : "Prompt"}</span>
-              <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs text-[var(--app-primary)]">
-                {currentStudyCard.direction === "forward"
-                  ? "Question -> answer"
-                  : "Answer -> question"}
-              </span>
-            </span>
-            <span className="whitespace-pre-wrap break-words text-[2.35rem] font-black leading-[1.08] tracking-normal">
-              {isAnswerVisible
-                ? getAnswerText(currentStudyCard)
-                : getPromptText(currentStudyCard)}
-            </span>
-            <span className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-sm font-bold text-[var(--app-text-muted)] dark:bg-white/10">
-              <RotateCcw aria-hidden="true" size={16} strokeWidth={2.2} />
-              Tap to flip, swipe to answer
-            </span>
+            <div
+              className="flashcard-inner relative min-h-[27rem]"
+              data-flipped={isAnswerVisible}
+            >
+              <FlashcardFace
+                directionLabel={
+                  currentStudyCard.direction === "forward"
+                    ? "Question -> answer"
+                    : "Answer -> question"
+                }
+                label="Prompt"
+                text={getPromptText(currentStudyCard)}
+              />
+              <FlashcardFace
+                directionLabel={
+                  currentStudyCard.direction === "forward"
+                    ? "Question -> answer"
+                    : "Answer -> question"
+                }
+                isBack
+                label="Answer"
+                text={getAnswerText(currentStudyCard)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-[1fr_3.5rem_1fr] gap-3">
@@ -466,6 +545,37 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         </div>
       )}
     </section>
+  );
+}
+
+function FlashcardFace({
+  directionLabel,
+  isBack = false,
+  label,
+  text,
+}: {
+  directionLabel: string;
+  isBack?: boolean;
+  label: string;
+  text: string;
+}) {
+  return (
+    <div
+      className={`flashcard-face flex min-h-[27rem] flex-col justify-between rounded-[2.25rem] p-6 ${
+        isBack ? "flashcard-face-back" : ""
+      }`}
+    >
+      <span className="flex items-center justify-between gap-3 text-sm font-black text-[var(--app-text-muted)]">
+        <span>{label}</span>
+        <span className="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-xs text-[var(--app-primary)]">
+          {directionLabel}
+        </span>
+      </span>
+      <span className="whitespace-pre-wrap break-words text-[2.35rem] font-black leading-[1.08] tracking-normal">
+        {text}
+      </span>
+      <span aria-hidden="true" className="h-7" />
+    </div>
   );
 }
 

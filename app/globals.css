@@ -154,6 +154,31 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.flashcard-perspective {
+  perspective: 1200px;
+  transform-origin: center 78%;
+}
+
+.flashcard-inner {
+  transform-style: preserve-3d;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.flashcard-inner[data-flipped="true"] {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flashcard-face-back {
+  inset: 0;
+  position: absolute;
+  transform: rotateY(180deg);
+}
+
 .app-screen {
   background-image: var(--app-screen-gradient);
   background-size:
