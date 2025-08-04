@@ -43,7 +43,7 @@ type StudyAnswer = "know" | "dontKnow";
 
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
-const ANSWER_ANIMATION_MS = 380;
+const ANSWER_ANIMATION_MS = 640;
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -55,8 +55,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [explanationError, setExplanationError] = useState("");
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
-  const [answeredCount, setAnsweredCount] = useState(0);
-  const [sessionTotal, setSessionTotal] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [answerAnimation, setAnswerAnimation] = useState<StudyAnswer | null>(
     null,
@@ -64,7 +62,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const dragStartXRef = useRef<number | null>(null);
   const dragLastOffsetRef = useRef(0);
   const hasDraggedRef = useRef(false);
-  const sessionTotalRef = useRef(0);
   const answerTimerRef = useRef<number | null>(null);
 
   const loadStudyCards = useCallback(async (preferredCardId?: string) => {
@@ -77,11 +74,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     const orderedPool = preferredCardId
       ? moveCardToFront(activePool, preferredCardId)
       : activePool;
-
-    if (sessionTotalRef.current === 0) {
-      sessionTotalRef.current = orderedPool.length;
-      setSessionTotal(orderedPool.length);
-    }
 
     setCards(
       orderedPool.map((card) => ({
@@ -112,13 +104,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }, []);
 
   const currentStudyCard = cards[0] ?? null;
-  const visibleSessionTotal = Math.max(sessionTotal, cards.length);
-  const progressText =
-    visibleSessionTotal === 0
-      ? "0"
-      : currentStudyCard
-        ? `${Math.min(answeredCount + 1, visibleSessionTotal)}/${visibleSessionTotal}`
-        : `${Math.min(answeredCount, visibleSessionTotal)}/${visibleSessionTotal}`;
   const currentExplanation = currentStudyCard?.card.explanation.trim() ?? "";
 
   const submitAnswer = useCallback(
@@ -143,9 +128,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         ]);
         await storage.saveCardProgress(updatedCard);
         await loadStudyCards();
-        setAnsweredCount((currentCount) =>
-          Math.min(currentCount + 1, Math.max(sessionTotalRef.current, 1)),
-        );
         setDragOffset(0);
       } finally {
         setAnswerAnimation(null);
@@ -185,7 +167,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       await storage.saveCardProgress(previousEntry.card);
       setUndoStack((currentStack) => currentStack.slice(0, -1));
       await loadStudyCards(previousEntry.card.id);
-      setAnsweredCount((currentCount) => Math.max(0, currentCount - 1));
       setDragOffset(0);
     } finally {
       setIsSubmitting(false);
@@ -409,9 +390,6 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.3} />
           Deck
         </Link>
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-4 py-2 text-sm font-black text-[var(--app-primary)]">
-          {isLoading ? "..." : progressText}
-        </span>
       </div>
 
       {isLoading ? (

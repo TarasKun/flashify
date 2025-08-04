@@ -58,8 +58,8 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="app-screen min-h-dvh text-[var(--app-text)]">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
+    <main className="app-screen h-dvh overflow-hidden text-[var(--app-text)]">
+      <div className="mx-auto flex h-dvh w-full max-w-md flex-col px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <header className="relative flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -135,7 +135,7 @@ export function AppShell({ children }: AppShellProps) {
           ) : null}
         </header>
 
-        <div className="mt-6 flex-1">{children}</div>
+        <div className="mt-6 min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     </main>
   );
