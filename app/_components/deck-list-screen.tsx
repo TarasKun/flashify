@@ -3,22 +3,27 @@
 import { Play } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Deck } from "@/lib/domain";
+import type { Card, Deck } from "@/lib/domain";
 import {
   createIndexedDbStorage,
   seedDemoData,
   type DeckProgress,
 } from "@/lib/storage";
 
-type DeckListItem = {
+const ACTIVE_DECK_STORAGE_KEY = "flashify.activeDeckId";
+const ACTIVE_DECK_CHANGE_EVENT = "flashify:active-deck-change";
+
+type ActiveDeckState = {
   deck: Deck;
+  cards: Card[];
   progress: DeckProgress;
   dueCount: number;
 };
 
 export function DeckListScreen() {
   const storage = useMemo(() => createIndexedDbStorage(), []);
-  const [items, setItems] = useState<DeckListItem[]>([]);
+  const [activeDeckState, setActiveDeckState] =
+    useState<ActiveDeckState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadDecks = useCallback(async () => {
@@ -26,23 +31,35 @@ export function DeckListScreen() {
     await seedDemoData(storage);
 
     const decks = await storage.listDecks();
-    const nextItems = await Promise.all(
-      decks.map(async (deck) => {
-        const progress = await storage.getDeckProgress(deck.id);
-        const dueCards = await storage.listStudyCards({
-          deckId: deck.id,
-          now: new Date(),
-        });
+    const savedDeckId = window.localStorage.getItem(ACTIVE_DECK_STORAGE_KEY);
+    const activeDeck =
+      decks.find((deck) => deck.id === savedDeckId) ?? decks[0] ?? null;
 
-        return {
-          deck,
-          progress,
-          dueCount: dueCards.length,
-        };
+    if (!activeDeck) {
+      setActiveDeckState(null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (activeDeck.id !== savedDeckId) {
+      window.localStorage.setItem(ACTIVE_DECK_STORAGE_KEY, activeDeck.id);
+    }
+
+    const [cards, progress, dueCards] = await Promise.all([
+      storage.listCardsForDeck(activeDeck.id),
+      storage.getDeckProgress(activeDeck.id),
+      storage.listStudyCards({
+        deckId: activeDeck.id,
+        now: new Date(),
       }),
-    );
+    ]);
 
-    setItems(nextItems);
+    setActiveDeckState({
+      deck: activeDeck,
+      cards,
+      progress,
+      dueCount: dueCards.length,
+    });
     setIsLoading(false);
   }, [storage]);
 
@@ -54,70 +71,116 @@ export function DeckListScreen() {
     return () => window.clearTimeout(timeoutId);
   }, [loadDecks]);
 
-  const learnedTotal = items.reduce(
-    (sum, item) => sum + item.progress.learned,
-    0,
-  );
-  const cardsTotal = items.reduce((sum, item) => sum + item.progress.total, 0);
-  const dueTotal = items.reduce((sum, item) => sum + item.dueCount, 0);
+  useEffect(() => {
+    function handleActiveDeckChange() {
+      void loadDecks();
+    }
+
+    window.addEventListener(ACTIVE_DECK_CHANGE_EVENT, handleActiveDeckChange);
+
+    return () =>
+      window.removeEventListener(
+        ACTIVE_DECK_CHANGE_EVENT,
+        handleActiveDeckChange,
+      );
+  }, [loadDecks]);
+
+  const activeCardsCount = activeDeckState
+    ? activeDeckState.progress.total - activeDeckState.progress.learned
+    : 0;
+  const practicedTodayCount =
+    activeDeckState?.cards.filter((card) => wasCardPracticedToday(card))
+      .length ?? 0;
+  const learnedCount = activeDeckState?.progress.learned ?? 0;
 
   return (
-    <section className="grid gap-5">
-      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-[var(--app-primary)]">
-              Today
-            </p>
-            <h2 className="mt-2 truncate text-3xl font-black tracking-normal">
-              {isLoading ? "Loading decks" : `${dueTotal} cards due`}
-            </h2>
-          </div>
-          <span className="shrink-0 rounded-full bg-white/75 px-4 py-2 text-sm font-black text-[var(--app-primary)] shadow-sm backdrop-blur dark:bg-white/10">
-            {learnedTotal}/{cardsTotal}
-          </span>
+    <section className="flex h-full min-h-0 flex-col gap-5">
+      <section className="flex min-h-0 flex-1 flex-col justify-center gap-6">
+        <div className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-6 text-center shadow-[var(--app-shadow)]">
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--app-primary)]">
+            Active deck
+          </p>
+          <h2 className="mt-3 break-words text-4xl font-black tracking-normal">
+            {isLoading
+              ? "Loading"
+              : activeDeckState?.deck.name ?? "No deck selected"}
+          </h2>
+          <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-6 text-[var(--app-text-muted)]">
+            {activeDeckState
+              ? `${activeDeckState.dueCount} cards are ready for practice now.`
+              : "Create a deck from the top selector to start learning."}
+          </p>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
-            <p className="text-xl font-black">{items.length}</p>
-            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
-              Decks
-            </p>
-          </div>
-          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
-            <p className="text-xl font-black">{cardsTotal}</p>
-            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
-              Cards
-            </p>
-          </div>
-          <div className="rounded-[var(--app-radius-sm)] bg-white/70 px-2 py-3 shadow-sm backdrop-blur dark:bg-white/10">
-            <p className="text-xl font-black">{learnedTotal}</p>
-            <p className="mt-1 text-xs font-bold text-[var(--app-text-muted)]">
-              Learned
-            </p>
-          </div>
+        <div className="grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
+          <Metric label="To learn" tone="primary" value={activeCardsCount} />
+          <Metric
+            label="Practiced"
+            tone="success"
+            value={practicedTodayCount}
+          />
+          <Metric label="Learned" tone="warning" value={learnedCount} />
         </div>
-
-        <Link
-          aria-disabled={!items[0]}
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
-          href={items[0] ? `/decks/${items[0].deck.id}/study` : "/"}
-        >
-          <Play aria-hidden="true" size={19} strokeWidth={2.4} />
-          Start study
-        </Link>
       </section>
 
-      {!isLoading && items.length === 0 ? (
-        <section className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 text-center shadow-[var(--app-shadow-soft)]">
-          <p className="font-black">No decks yet</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
-            Create a deck from the top menu, then add cards manually or import
-            text.
-          </p>
-        </section>
-      ) : null}
+      <Link
+        aria-disabled={!activeDeckState}
+        className="flex h-16 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-lg font-black uppercase tracking-[0.08em] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        href={activeDeckState ? `/decks/${activeDeckState.deck.id}/study` : "/"}
+      >
+        <Play aria-hidden="true" size={21} strokeWidth={2.4} />
+        Start study
+      </Link>
     </section>
+  );
+}
+
+function Metric({
+  label,
+  tone,
+  value,
+}: {
+  label: string;
+  tone: "primary" | "success" | "warning";
+  value: number;
+}) {
+  const colorClass =
+    tone === "success"
+      ? "text-[var(--app-success)]"
+      : tone === "warning"
+        ? "text-[var(--app-warning)]"
+        : "text-[var(--app-primary)]";
+
+  return (
+    <div className="grid min-h-28 place-items-center border-r border-[var(--app-border)] px-2 py-4 text-center last:border-r-0">
+      <div>
+        <p className={`text-3xl font-black ${colorClass}`}>{value}</p>
+        <p className="mt-2 text-[0.68rem] font-black uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function wasCardPracticedToday(card: Card): boolean {
+  return (
+    isToday(card.progress.forward.lastAnsweredAt) ||
+    isToday(card.progress.reverse.lastAnsweredAt)
+  );
+}
+
+function isToday(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const date = new Date(value);
+  const today = new Date();
+
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown, Menu, Plus } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   type FormEvent,
@@ -15,6 +14,9 @@ import type { Deck } from "@/lib/domain";
 import { createIndexedDbStorage, seedDemoData } from "@/lib/storage";
 import { ThemeToggle } from "./theme-toggle";
 
+const ACTIVE_DECK_STORAGE_KEY = "flashify.activeDeckId";
+const ACTIVE_DECK_CHANGE_EVENT = "flashify:active-deck-change";
+
 type AppShellProps = {
   children: ReactNode;
 };
@@ -26,10 +28,21 @@ export function AppShell({ children }: AppShellProps) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
+  const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
 
   const loadDecks = useCallback(async () => {
     await seedDemoData(storage);
-    setDecks(await storage.listDecks());
+    const nextDecks = await storage.listDecks();
+    const savedDeckId = window.localStorage.getItem(ACTIVE_DECK_STORAGE_KEY);
+    const nextActiveDeck =
+      nextDecks.find((deck) => deck.id === savedDeckId) ?? nextDecks[0] ?? null;
+
+    setDecks(nextDecks);
+    setActiveDeckId(nextActiveDeck?.id ?? null);
+
+    if (nextActiveDeck && nextActiveDeck.id !== savedDeckId) {
+      saveActiveDeckId(nextActiveDeck.id);
+    }
   }, [storage]);
 
   useEffect(() => {
@@ -39,6 +52,18 @@ export function AppShell({ children }: AppShellProps) {
 
     return () => window.clearTimeout(timeoutId);
   }, [loadDecks, pathname]);
+
+  const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
+
+  function selectDeck(deckId: string) {
+    setActiveDeckId(deckId);
+    saveActiveDeckId(deckId);
+    setIsDeckMenuOpen(false);
+
+    if (pathname !== "/") {
+      router.push("/");
+    }
+  }
 
   async function createDeck(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,52 +78,51 @@ export function AppShell({ children }: AppShellProps) {
 
     setNewDeckName("");
     setIsDeckMenuOpen(false);
+    setActiveDeckId(deck.id);
+    saveActiveDeckId(deck.id);
     await loadDecks();
-    router.push(`/decks/${deck.id}`);
+
+    if (pathname !== "/") {
+      router.push("/");
+    }
   }
 
   return (
     <main className="app-screen h-dvh overflow-hidden text-[var(--app-text)]">
-      <div className="mx-auto flex h-dvh w-full max-w-md flex-col px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
-        <header className="relative flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              aria-expanded={isDeckMenuOpen}
-              aria-label="Open decks"
-              className="grid size-14 shrink-0 place-items-center rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-              onClick={() =>
-                setIsDeckMenuOpen((currentValue) => !currentValue)
-              }
-              type="button"
-            >
-              <Menu aria-hidden="true" size={24} strokeWidth={2.3} />
-            </button>
-            <div className="min-w-0">
-              <button
-                className="flex max-w-full items-center gap-1.5 text-left"
-                onClick={() =>
-                  setIsDeckMenuOpen((currentValue) => !currentValue)
-                }
-                type="button"
-              >
-                <span className="truncate text-2xl font-black tracking-normal">
-                  Flashify
-                </span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`shrink-0 transition ${
-                    isDeckMenuOpen ? "rotate-180" : ""
-                  }`}
-                  size={18}
-                  strokeWidth={2.5}
-                />
-              </button>
-              <p className="mt-0.5 truncate text-sm font-semibold text-[var(--app-text-muted)]">
-                {decks.length > 0 ? `${decks.length} decks` : "No decks yet"}
-              </p>
-            </div>
-          </div>
+      <div className="flex h-dvh w-full flex-col px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
+        <header className="relative grid h-16 grid-cols-[3.5rem_1fr_3.5rem] items-center gap-3">
           <ThemeToggle />
+          <button
+            aria-expanded={isDeckMenuOpen}
+            className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-2 rounded-full px-3 py-2 text-center"
+            onClick={() =>
+              setIsDeckMenuOpen((currentValue) => !currentValue)
+            }
+            type="button"
+          >
+            <span className="truncate text-2xl font-black tracking-normal">
+              {activeDeck?.name ?? "Flashify"}
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`shrink-0 text-[var(--app-text-muted)] transition ${
+                isDeckMenuOpen ? "rotate-180" : ""
+              }`}
+              size={20}
+              strokeWidth={2.5}
+            />
+          </button>
+          <button
+            aria-expanded={isDeckMenuOpen}
+            aria-label="Open decks"
+            className="grid size-12 place-items-center justify-self-end rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+            onClick={() =>
+              setIsDeckMenuOpen((currentValue) => !currentValue)
+            }
+            type="button"
+          >
+            <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
+          </button>
 
           {isDeckMenuOpen ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
@@ -121,14 +145,18 @@ export function AppShell({ children }: AppShellProps) {
 
               <nav className="grid max-h-72 gap-1 overflow-y-auto">
                 {decks.map((deck) => (
-                  <Link
-                    className="rounded-[var(--app-radius-sm)] px-4 py-3 text-sm font-black transition hover:bg-[var(--app-primary-soft)]"
-                    href={`/decks/${deck.id}`}
+                  <button
+                    className={`rounded-[var(--app-radius-sm)] px-4 py-3 text-left text-sm font-black transition hover:bg-[var(--app-primary-soft)] ${
+                      deck.id === activeDeckId
+                        ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
+                        : ""
+                    }`}
                     key={deck.id}
-                    onClick={() => setIsDeckMenuOpen(false)}
+                    onClick={() => selectDeck(deck.id)}
+                    type="button"
                   >
                     {deck.name}
-                  </Link>
+                  </button>
                 ))}
               </nav>
             </div>
@@ -138,5 +166,16 @@ export function AppShell({ children }: AppShellProps) {
         <div className="mt-6 min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     </main>
+  );
+}
+
+function saveActiveDeckId(deckId: string) {
+  window.localStorage.setItem(ACTIVE_DECK_STORAGE_KEY, deckId);
+  window.dispatchEvent(
+    new CustomEvent(ACTIVE_DECK_CHANGE_EVENT, {
+      detail: {
+        deckId,
+      },
+    }),
   );
 }
