@@ -43,7 +43,7 @@ type StudyAnswer = "know" | "dontKnow";
 
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
-const ANSWER_ANIMATION_MS = 640;
+const ANSWER_ANIMATION_MS = 900;
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);

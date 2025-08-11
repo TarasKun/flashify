@@ -53,8 +53,6 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.clearTimeout(timeoutId);
   }, [loadDecks, pathname]);
 
-  const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
-
   function selectDeck(deckId: string) {
     setActiveDeckId(deckId);
     saveActiveDeckId(deckId);
@@ -94,21 +92,19 @@ export function AppShell({ children }: AppShellProps) {
           <ThemeToggle />
           <button
             aria-expanded={isDeckMenuOpen}
-            className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-2 rounded-full px-3 py-2 text-center"
+            aria-label="Select deck"
+            className="mx-auto grid size-12 place-items-center rounded-full text-[var(--app-text-muted)]"
             onClick={() =>
               setIsDeckMenuOpen((currentValue) => !currentValue)
             }
             type="button"
           >
-            <span className="truncate text-2xl font-black tracking-normal">
-              {activeDeck?.name ?? "Flashify"}
-            </span>
             <ChevronDown
               aria-hidden="true"
-              className={`shrink-0 text-[var(--app-text-muted)] transition ${
+              className={`transition ${
                 isDeckMenuOpen ? "rotate-180" : ""
               }`}
-              size={20}
+              size={24}
               strokeWidth={2.5}
             />
           </button>

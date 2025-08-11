@@ -95,24 +95,16 @@ export function DeckListScreen() {
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-5">
-      <section className="flex min-h-0 flex-1 flex-col justify-center gap-6">
-        <div className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-6 text-center shadow-[var(--app-shadow)]">
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--app-primary)]">
-            Active deck
-          </p>
-          <h2 className="mt-3 break-words text-4xl font-black tracking-normal">
+      <section className="flex min-h-0 flex-1 flex-col">
+        <div className="pt-8 text-center">
+          <h2 className="break-words text-4xl font-black tracking-normal">
             {isLoading
               ? "Loading"
               : activeDeckState?.deck.name ?? "No deck selected"}
           </h2>
-          <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-6 text-[var(--app-text-muted)]">
-            {activeDeckState
-              ? `${activeDeckState.dueCount} cards are ready for practice now.`
-              : "Create a deck from the top selector to start learning."}
-          </p>
         </div>
 
-        <div className="grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
+        <div className="mt-auto grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
           <Metric label="To learn" tone="primary" value={activeCardsCount} />
           <Metric
             label="Practiced"
