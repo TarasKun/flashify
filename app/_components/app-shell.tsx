@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, Menu, Plus } from "lucide-react";
+import { ArrowLeft, ChevronDown, Menu, Plus } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   type FormEvent,
@@ -53,6 +54,8 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.clearTimeout(timeoutId);
   }, [loadDecks, pathname]);
 
+  const studyDeckId = getStudyDeckId(pathname);
+
   function selectDeck(deckId: string) {
     setActiveDeckId(deckId);
     saveActiveDeckId(deckId);
@@ -89,7 +92,17 @@ export function AppShell({ children }: AppShellProps) {
     <main className="app-screen h-dvh overflow-hidden text-[var(--app-text)]">
       <div className="flex h-dvh w-full flex-col px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <header className="relative grid h-16 grid-cols-[3.5rem_1fr_3.5rem] items-center gap-3">
-          <ThemeToggle />
+          {studyDeckId ? (
+            <Link
+              aria-label="Back to deck"
+              className="grid size-12 place-items-center justify-self-start rounded-full border border-white/70 bg-white/80 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+              href={`/decks/${studyDeckId}`}
+            >
+              <ArrowLeft aria-hidden="true" size={22} strokeWidth={2.4} />
+            </Link>
+          ) : (
+            <span aria-hidden="true" className="size-12" />
+          )}
           <button
             aria-expanded={isDeckMenuOpen}
             aria-label="Select deck"
@@ -122,6 +135,13 @@ export function AppShell({ children }: AppShellProps) {
 
           {isDeckMenuOpen ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+              <div className="flex items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 py-3">
+                <span className="text-sm font-black text-[var(--app-text-muted)]">
+                  Theme
+                </span>
+                <ThemeToggle />
+              </div>
+
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
                   className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-sm font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
@@ -163,6 +183,12 @@ export function AppShell({ children }: AppShellProps) {
       </div>
     </main>
   );
+}
+
+function getStudyDeckId(pathname: string): string | null {
+  const match = pathname.match(/^\/decks\/([^/]+)\/study$/);
+
+  return match?.[1] ?? null;
 }
 
 function saveActiveDeckId(deckId: string) {
