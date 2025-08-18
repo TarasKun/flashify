@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   Check,
   Clipboard,
   X,
@@ -348,14 +347,6 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   return (
     <section className="grid gap-5">
-      <Link
-        className="flex w-fit items-center gap-2 rounded-full bg-white/70 px-3 py-2 text-sm font-bold text-[var(--app-text-muted)] shadow-sm backdrop-blur dark:bg-white/10"
-        href="/"
-      >
-        <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.3} />
-        Decks
-      </Link>
-
       <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={renameDeck}>

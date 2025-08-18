@@ -266,7 +266,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       : `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`;
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-4">
+    <section className="flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden">
       {isLoading ? (
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
@@ -275,7 +275,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <>
           <div
             aria-label="Flashcard"
-            className="flashcard-perspective min-h-0 flex-1 touch-none select-none rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-left shadow-[var(--app-shadow)] dark:border-white/10"
+            className="flashcard-perspective min-h-0 w-full max-w-full flex-1 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-left shadow-[var(--app-shadow)] dark:border-white/10"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}

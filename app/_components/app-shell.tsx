@@ -28,6 +28,7 @@ export function AppShell({ children }: AppShellProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
+  const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
 
@@ -54,12 +55,13 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.clearTimeout(timeoutId);
   }, [loadDecks, pathname]);
 
-  const studyDeckId = getStudyDeckId(pathname);
+  const deckNavigation = getDeckNavigation(pathname);
 
   function selectDeck(deckId: string) {
     setActiveDeckId(deckId);
     saveActiveDeckId(deckId);
     setIsDeckMenuOpen(false);
+    setIsAppMenuOpen(false);
 
     if (pathname !== "/") {
       router.push("/");
@@ -79,6 +81,7 @@ export function AppShell({ children }: AppShellProps) {
 
     setNewDeckName("");
     setIsDeckMenuOpen(false);
+    setIsAppMenuOpen(false);
     setActiveDeckId(deck.id);
     saveActiveDeckId(deck.id);
     await loadDecks();
@@ -89,27 +92,29 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="app-screen h-dvh overflow-hidden text-[var(--app-text)]">
-      <div className="flex h-dvh w-full flex-col px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
-        <header className="relative grid h-16 grid-cols-[3.5rem_1fr_3.5rem] items-center gap-3">
-          {studyDeckId ? (
+    <main className="app-screen h-dvh w-dvw max-w-full overflow-hidden text-[var(--app-text)]">
+      <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
+        <header className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3">
+          {deckNavigation ? (
             <Link
-              aria-label="Back to deck"
-              className="grid size-12 place-items-center justify-self-start rounded-full border border-white/70 bg-white/80 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-              href={`/decks/${studyDeckId}`}
+              aria-label={deckNavigation.label}
+              className="flex h-12 items-center gap-1.5 justify-self-start rounded-full border border-white/70 bg-white/80 px-3 text-sm font-black text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+              href={deckNavigation.href}
             >
-              <ArrowLeft aria-hidden="true" size={22} strokeWidth={2.4} />
+              <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
+              {deckNavigation.label}
             </Link>
           ) : (
-            <span aria-hidden="true" className="size-12" />
+            <span aria-hidden="true" className="h-12 w-[5.5rem]" />
           )}
           <button
             aria-expanded={isDeckMenuOpen}
             aria-label="Select deck"
             className="mx-auto grid size-12 place-items-center rounded-full text-[var(--app-text-muted)]"
-            onClick={() =>
-              setIsDeckMenuOpen((currentValue) => !currentValue)
-            }
+            onClick={() => {
+              setIsAppMenuOpen(false);
+              setIsDeckMenuOpen((currentValue) => !currentValue);
+            }}
             type="button"
           >
             <ChevronDown
@@ -122,26 +127,31 @@ export function AppShell({ children }: AppShellProps) {
             />
           </button>
           <button
-            aria-expanded={isDeckMenuOpen}
-            aria-label="Open decks"
+            aria-expanded={isAppMenuOpen}
+            aria-label="Open menu"
             className="grid size-12 place-items-center justify-self-end rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-            onClick={() =>
-              setIsDeckMenuOpen((currentValue) => !currentValue)
-            }
+            onClick={() => {
+              setIsDeckMenuOpen(false);
+              setIsAppMenuOpen((currentValue) => !currentValue);
+            }}
             type="button"
           >
             <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
           </button>
 
-          {isDeckMenuOpen ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+          {isAppMenuOpen ? (
+            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
               <div className="flex items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 py-3">
                 <span className="text-sm font-black text-[var(--app-text-muted)]">
                   Theme
                 </span>
                 <ThemeToggle />
               </div>
+            </div>
+          ) : null}
 
+          {isDeckMenuOpen ? (
+            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
                   className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-sm font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
@@ -179,16 +189,36 @@ export function AppShell({ children }: AppShellProps) {
           ) : null}
         </header>
 
-        <div className="mt-6 min-h-0 flex-1 overflow-y-auto">{children}</div>
+        <div className="mt-6 min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {children}
+        </div>
       </div>
     </main>
   );
 }
 
-function getStudyDeckId(pathname: string): string | null {
-  const match = pathname.match(/^\/decks\/([^/]+)\/study$/);
+function getDeckNavigation(
+  pathname: string,
+): { href: string; label: string } | null {
+  const studyMatch = pathname.match(/^\/decks\/([^/]+)\/study$/);
 
-  return match?.[1] ?? null;
+  if (studyMatch?.[1]) {
+    return {
+      href: `/decks/${studyMatch[1]}`,
+      label: "Deck",
+    };
+  }
+
+  const deckMatch = pathname.match(/^\/decks\/([^/]+)$/);
+
+  if (deckMatch?.[1]) {
+    return {
+      href: "/",
+      label: "Deck",
+    };
+  }
+
+  return null;
 }
 
 function saveActiveDeckId(deckId: string) {
