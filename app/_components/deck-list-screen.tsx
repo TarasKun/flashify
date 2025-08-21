@@ -96,7 +96,7 @@ export function DeckListScreen() {
   return (
     <section className="flex h-full min-h-0 flex-col gap-5">
       <section className="flex min-h-0 flex-1 flex-col">
-        <div className="pt-8 text-center">
+        <div className="pt-1 text-center">
           <h2 className="break-words text-4xl font-black tracking-normal">
             {isLoading
               ? "Loading"

@@ -92,17 +92,19 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="app-screen h-dvh w-dvw max-w-full overflow-hidden text-[var(--app-text)]">
+    <main className="app-screen h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
       <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <header className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3">
           {deckNavigation ? (
             <Link
-              aria-label={deckNavigation.label}
-              className="flex h-12 items-center gap-1.5 justify-self-start rounded-full border border-white/70 bg-white/80 px-3 text-sm font-black text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+              aria-label={deckNavigation.ariaLabel}
+              className={`flex h-12 items-center justify-center justify-self-start rounded-full border border-white/70 bg-white/80 text-sm font-black text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10 ${
+                deckNavigation.label ? "gap-1.5 px-3" : "w-12"
+              }`}
               href={deckNavigation.href}
             >
               <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
-              {deckNavigation.label}
+              {deckNavigation.label ? deckNavigation.label : null}
             </Link>
           ) : (
             <span aria-hidden="true" className="h-12 w-[5.5rem]" />
@@ -199,12 +201,13 @@ export function AppShell({ children }: AppShellProps) {
 
 function getDeckNavigation(
   pathname: string,
-): { href: string; label: string } | null {
+): { href: string; ariaLabel: string; label?: string } | null {
   const studyMatch = pathname.match(/^\/decks\/([^/]+)\/study$/);
 
   if (studyMatch?.[1]) {
     return {
       href: `/decks/${studyMatch[1]}`,
+      ariaLabel: "Back to deck",
       label: "Deck",
     };
   }
@@ -214,7 +217,7 @@ function getDeckNavigation(
   if (deckMatch?.[1]) {
     return {
       href: "/",
-      label: "Deck",
+      ariaLabel: "Back to home",
     };
   }
 

@@ -346,8 +346,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   }
 
   return (
-    <section className="grid gap-5">
-      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
+    <section className="grid min-w-0 max-w-full gap-5 overflow-x-hidden">
+      <section className="min-w-0 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={renameDeck}>
             <input
@@ -431,7 +431,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         )}
       </section>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid min-w-0 grid-cols-2 gap-3">
         <button
           className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
           onClick={() => setIsAddingCard((currentValue) => !currentValue)}

@@ -33,7 +33,7 @@ type StudyAnswer = "know" | "dontKnow";
 
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
-const ANSWER_ANIMATION_MS = 900;
+const ANSWER_ANIMATION_MS = 1300;
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -275,7 +275,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <>
           <div
             aria-label="Flashcard"
-            className="flashcard-perspective min-h-0 w-full max-w-full flex-1 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-left shadow-[var(--app-shadow)] dark:border-white/10"
+            className="flashcard-perspective min-h-0 w-full max-w-full flex-1 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
             onPointerCancel={handlePointerCancel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -360,11 +360,11 @@ function FlashcardFace({
 }) {
   return (
     <div
-      className={`flashcard-face flex h-full min-h-0 flex-col justify-center rounded-[2.25rem] p-6 ${
+      className={`flashcard-face flex h-full min-h-0 flex-col items-center justify-center rounded-[2.25rem] p-6 text-center ${
         isBack ? "flashcard-face-back" : ""
       }`}
     >
-      <span className="whitespace-pre-wrap break-words text-[2.35rem] font-black leading-[1.08] tracking-normal">
+      <span className="w-full whitespace-pre-wrap break-words text-center text-[2.35rem] font-black leading-[1.08] tracking-normal">
         {text}
       </span>
     </div>
