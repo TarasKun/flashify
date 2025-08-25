@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Menu, Plus } from "lucide-react";
+import { ArrowLeft, ChevronDown, Menu, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -173,18 +173,30 @@ export function AppShell({ children }: AppShellProps) {
 
               <nav className="grid max-h-72 gap-1 overflow-y-auto">
                 {decks.map((deck) => (
-                  <button
-                    className={`rounded-[var(--app-radius-sm)] px-4 py-3 text-left text-sm font-black transition hover:bg-[var(--app-primary-soft)] ${
-                      deck.id === activeDeckId
-                        ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
-                        : ""
-                    }`}
-                    key={deck.id}
-                    onClick={() => selectDeck(deck.id)}
-                    type="button"
-                  >
-                    {deck.name}
-                  </button>
+                  <div className="flex items-center gap-2" key={deck.id}>
+                    <button
+                      className={`min-w-0 flex-1 rounded-[var(--app-radius-sm)] px-4 py-3 text-left text-sm font-black transition hover:bg-[var(--app-primary-soft)] ${
+                        deck.id === activeDeckId
+                          ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
+                          : ""
+                      }`}
+                      onClick={() => selectDeck(deck.id)}
+                      type="button"
+                    >
+                      <span className="block truncate">{deck.name}</span>
+                    </button>
+                    <Link
+                      aria-label={`Open ${deck.name} deck settings`}
+                      className="grid size-10 shrink-0 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-text-muted)] transition hover:text-[var(--app-primary)] dark:bg-white/10"
+                      href={`/decks/${deck.id}`}
+                      onClick={() => {
+                        setIsDeckMenuOpen(false);
+                        setIsAppMenuOpen(false);
+                      }}
+                    >
+                      <Settings aria-hidden="true" size={17} strokeWidth={2.3} />
+                    </Link>
+                  </div>
                 ))}
               </nav>
             </div>
@@ -206,9 +218,8 @@ function getDeckNavigation(
 
   if (studyMatch?.[1]) {
     return {
-      href: `/decks/${studyMatch[1]}`,
-      ariaLabel: "Back to deck",
-      label: "Deck",
+      href: "/",
+      ariaLabel: "Back to home",
     };
   }
 

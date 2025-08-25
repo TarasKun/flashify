@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Card, Deck } from "@/lib/domain";
+import { LEARNING_CONFIG, type Card, type Deck } from "@/lib/domain";
 import { parseImportJson, type ImportCardDraft } from "@/lib/domain/import-cards";
 import { createIndexedDbStorage, type DeckProgress } from "@/lib/storage";
 
@@ -344,6 +344,8 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       </section>
     );
   }
+
+  const sortedCards = sortCardsForDeckList(cards);
 
   return (
     <section className="grid min-w-0 max-w-full gap-5 overflow-x-hidden">
@@ -686,87 +688,181 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           </div>
         ) : (
           <div className="grid gap-3">
-            {cards.map((card) => (
-              <article
-                className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
-                key={card.id}
-              >
-                {editingCardId === card.id ? (
-                  <form className="grid gap-3" onSubmit={updateCard}>
-                    <textarea
-                      className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-                      onChange={(event) =>
-                        setEditingQuestion(event.target.value)
-                      }
-                      value={editingQuestion}
-                    />
-                    <textarea
-                      className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-                      onChange={(event) => setEditingAnswer(event.target.value)}
-                      value={editingAnswer}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        className="h-11 rounded-full bg-[var(--app-primary)] px-4 text-sm font-black text-[var(--app-primary-contrast)]"
-                        type="submit"
-                      >
-                        Save
-                      </button>
-                      <button
-                        className="h-11 rounded-full border border-[var(--app-border)] bg-white/60 px-4 text-sm font-black dark:bg-white/10"
-                        onClick={() => setEditingCardId(null)}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                    <h4 className="line-clamp-2 text-lg font-black">
-                      {card.question}
-                    </h4>
-                    <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
-                      {card.answer}
-                    </p>
-                    {card.explanation ? (
-                      <p className="mt-3 w-fit rounded-full bg-[var(--app-success-soft)] px-3 py-1 text-xs font-black text-[var(--app-success)]">
-                        Explanation saved
+            {sortedCards.map((card) => {
+              const learningProgress = getCardLearningProgress(card);
+
+              return (
+                <article
+                  className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+                  key={card.id}
+                >
+                  {editingCardId === card.id ? (
+                    <form className="grid gap-3" onSubmit={updateCard}>
+                      <textarea
+                        className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+                        onChange={(event) =>
+                          setEditingQuestion(event.target.value)
+                        }
+                        value={editingQuestion}
+                      />
+                      <textarea
+                        className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+                        onChange={(event) =>
+                          setEditingAnswer(event.target.value)
+                        }
+                        value={editingAnswer}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          className="h-11 rounded-full bg-[var(--app-primary)] px-4 text-sm font-black text-[var(--app-primary-contrast)]"
+                          type="submit"
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="h-11 rounded-full border border-[var(--app-border)] bg-white/60 px-4 text-sm font-black dark:bg-white/10"
+                          onClick={() => setEditingCardId(null)}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <h4 className="line-clamp-2 text-lg font-black">
+                        {card.question}
+                      </h4>
+                      <p className="mt-2 line-clamp-2 text-sm text-[var(--app-text-muted)]">
+                        {card.answer}
                       </p>
-                    ) : null}
-                    <div className="mt-3 flex justify-end gap-2">
-                      <button
-                        aria-label="Edit card"
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
-                        onClick={() => startEditingCard(card)}
-                        title="Edit card"
-                        type="button"
-                      >
-                        <Pencil aria-hidden="true" size={17} strokeWidth={2.2} />
-                      </button>
-                      <button
-                        aria-label="Delete card"
-                        className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
-                        onClick={() => deleteCard(card)}
-                        title="Delete card"
-                        type="button"
-                      >
-                        <Trash2
-                          aria-hidden="true"
-                          size={17}
-                          strokeWidth={2.2}
-                        />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </article>
-            ))}
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-black uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+                            {learningProgress.label}
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-black ${
+                              learningProgress.isLearned
+                                ? "bg-[var(--app-success-soft)] text-[var(--app-success)]"
+                                : "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
+                            }`}
+                          >
+                            {learningProgress.completed}/
+                            {learningProgress.total}
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/65 dark:bg-white/10">
+                          <div
+                            className={`h-full rounded-full ${
+                              learningProgress.isLearned
+                                ? "bg-[var(--app-success)]"
+                                : "bg-[var(--app-primary)]"
+                            }`}
+                            style={{ width: `${learningProgress.percent}%` }}
+                          />
+                        </div>
+                      </div>
+                      {card.explanation ? (
+                        <p className="mt-3 w-fit rounded-full bg-[var(--app-success-soft)] px-3 py-1 text-xs font-black text-[var(--app-success)]">
+                          Explanation saved
+                        </p>
+                      ) : null}
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          aria-label="Edit card"
+                          className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-text-muted)] dark:bg-white/10"
+                          onClick={() => startEditingCard(card)}
+                          title="Edit card"
+                          type="button"
+                        >
+                          <Pencil
+                            aria-hidden="true"
+                            size={17}
+                            strokeWidth={2.2}
+                          />
+                        </button>
+                        <button
+                          aria-label="Delete card"
+                          className="grid size-10 place-items-center rounded-full border border-[var(--app-border)] bg-white/60 text-[var(--app-danger)] dark:bg-white/10"
+                          onClick={() => deleteCard(card)}
+                          title="Delete card"
+                          type="button"
+                        >
+                          <Trash2
+                            aria-hidden="true"
+                            size={17}
+                            strokeWidth={2.2}
+                          />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
     </section>
   );
+}
+
+function sortCardsForDeckList(cards: Card[]): Card[] {
+  return [...cards].sort((left, right) => {
+    const learnedDelta =
+      Number(left.status === "learned") - Number(right.status === "learned");
+
+    if (learnedDelta !== 0) {
+      return learnedDelta;
+    }
+
+    return left.createdAt.localeCompare(right.createdAt);
+  });
+}
+
+function getCardLearningProgress(card: Card): {
+  completed: number;
+  total: number;
+  percent: number;
+  isLearned: boolean;
+  label: string;
+} {
+  const requiredStreak = LEARNING_CONFIG.REQUIRED_STREAK_PER_DIRECTION;
+  const stageSize = requiredStreak * 2;
+  const total = stageSize * 3;
+  const currentStageProgress = Math.min(
+    stageSize,
+    Math.min(card.progress.forward.correctStreak, requiredStreak) +
+      Math.min(card.progress.reverse.correctStreak, requiredStreak),
+  );
+  const isLearned = card.status === "learned";
+  const completed = isLearned
+    ? total
+    : Math.min(total, card.reviewLevel * stageSize + currentStageProgress);
+
+  return {
+    completed,
+    total,
+    percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+    isLearned,
+    label: isLearned ? "Learned" : getStatusLabel(card.status),
+  };
+}
+
+function getStatusLabel(status: Card["status"]): string {
+  switch (status) {
+    case "new":
+      return "New";
+    case "learning":
+      return "Learning";
+    case "resting":
+      return "Resting";
+    case "review":
+      return "Review";
+    case "learned":
+      return "Learned";
+  }
 }
 
 async function copyTextToClipboard(text: string): Promise<void> {

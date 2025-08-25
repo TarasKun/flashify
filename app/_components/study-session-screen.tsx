@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type FormEvent,
   type MouseEvent,
   type PointerEvent,
 } from "react";
@@ -42,6 +43,9 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
   const [answerAnimation, setAnswerAnimation] = useState<StudyAnswer | null>(
     null,
   );
@@ -238,6 +242,28 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     answerWithAnimation(answer);
   }
 
+  async function createCard(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const question = newQuestion.trim();
+    const answer = newAnswer.trim();
+
+    if (!question || !answer) {
+      return;
+    }
+
+    const card = await storage.createCard({
+      deckId,
+      question,
+      answer,
+    });
+
+    setNewQuestion("");
+    setNewAnswer("");
+    setIsAddingCard(false);
+    await loadStudyCards(card.id);
+  }
+
   function getPromptText(studyCard: StudyCard): string {
     return studyCard.direction === "forward"
       ? studyCard.card.question
@@ -266,7 +292,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       : `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`;
 
   return (
-    <section className="flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden">
+    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden">
       {isLoading ? (
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
@@ -347,6 +373,55 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           </Link>
         </div>
       )}
+
+      {isAddingCard ? (
+        <form
+          className="absolute inset-x-0 bottom-20 z-20 grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]"
+          onSubmit={createCard}
+        >
+          <textarea
+            aria-label="New card question"
+            className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+            onChange={(event) => setNewQuestion(event.target.value)}
+            placeholder="Question"
+            value={newQuestion}
+          />
+          <textarea
+            aria-label="New card answer"
+            className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+            onChange={(event) => setNewAnswer(event.target.value)}
+            placeholder="Answer"
+            value={newAnswer}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-3 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
+              disabled={!newQuestion.trim() || !newAnswer.trim()}
+              type="submit"
+            >
+              <Check aria-hidden="true" size={18} strokeWidth={2.3} />
+              Save
+            </button>
+            <button
+              className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-3 font-black dark:bg-white/10"
+              onClick={() => setIsAddingCard(false)}
+              type="button"
+            >
+              <X aria-hidden="true" size={18} strokeWidth={2.3} />
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      <button
+        aria-label="Add card"
+        className="absolute bottom-20 right-0 z-10 grid size-12 place-items-center rounded-full bg-[var(--app-primary)] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)]"
+        onClick={() => setIsAddingCard((currentValue) => !currentValue)}
+        type="button"
+      >
+        <Plus aria-hidden="true" size={22} strokeWidth={2.5} />
+      </button>
     </section>
   );
 }
