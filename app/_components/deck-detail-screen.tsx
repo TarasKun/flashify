@@ -14,32 +14,13 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEARNING_CONFIG, type Card, type Deck } from "@/lib/domain";
+import { buildAiJsonPrompt } from "@/lib/domain/ai-prompt";
 import { parseImportJson, type ImportCardDraft } from "@/lib/domain/import-cards";
 import { createIndexedDbStorage, type DeckProgress } from "@/lib/storage";
 
 type DeckDetailScreenProps = {
   deckId: string;
 };
-
-const AI_JSON_PROMPT = `Convert this vocabulary or flashcard content into valid JSON.
-
-Return only JSON, no markdown, no comments.
-
-Accepted format:
-[
-  {
-    "question": "word, phrase, or question to study",
-    "answer": "translation or answer",
-    "explanation": "short explanation or example sentence, optional"
-  }
-]
-
-Rules:
-- question and answer are required strings.
-- explanation is optional. Omit it if there is no useful explanation.
-- Do not add extra fields.
-- Do not wrap the JSON in markdown.
-- Preserve the original meaning.`;
 
 export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const router = useRouter();
@@ -240,8 +221,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   }
 
   async function copyImportPrompt() {
+    if (!deck) {
+      return;
+    }
+
     try {
-      await copyTextToClipboard(AI_JSON_PROMPT);
+      await copyTextToClipboard(buildAiJsonPrompt(deck.name));
       setHasCopiedImportPrompt(true);
       window.setTimeout(() => setHasCopiedImportPrompt(false), 1800);
     } catch {
