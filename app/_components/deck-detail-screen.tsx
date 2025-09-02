@@ -15,7 +15,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEARNING_CONFIG, type Card, type Deck } from "@/lib/domain";
 import { buildAiJsonPrompt } from "@/lib/domain/ai-prompt";
-import { parseImportJson, type ImportCardDraft } from "@/lib/domain/import-cards";
+import {
+  isJsonLikeImportText,
+  parseImportJson,
+  type ImportCardDraft,
+} from "@/lib/domain/import-cards";
 import { createIndexedDbStorage, type DeckProgress } from "@/lib/storage";
 
 type DeckDetailScreenProps = {
@@ -151,6 +155,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
         setImportPreviewCards(jsonCards);
         return;
+      }
+
+      if (isJsonLikeImportText(text)) {
+        throw new Error(
+          "Invalid JSON format. Use an array of cards, a single card object, or an object with a cards array.",
+        );
       }
 
       const response = await fetch("/api/ai/parse-cards", {
@@ -800,6 +810,14 @@ function sortCardsForDeckList(cards: Card[]): Card[] {
 
     if (learnedDelta !== 0) {
       return learnedDelta;
+    }
+
+    const progressDelta =
+      getCardLearningProgress(left).completed -
+      getCardLearningProgress(right).completed;
+
+    if (progressDelta !== 0) {
+      return progressDelta;
     }
 
     return left.createdAt.localeCompare(right.createdAt);

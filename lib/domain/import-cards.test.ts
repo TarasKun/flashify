@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseImportJson } from "./import-cards";
+import { isJsonLikeImportText, parseImportJson } from "./import-cards";
 
 describe("import card JSON parser", () => {
   it("parses a card array with optional explanations", () => {
@@ -52,6 +52,43 @@ describe("import card JSON parser", () => {
     ]);
   });
 
+  it("parses a single card object payload", () => {
+    const cards = parseImportJson(`
+      {
+        "question": "cat",
+        "answer": "кіт"
+      }
+    `);
+
+    expect(cards).toMatchObject([
+      {
+        question: "cat",
+        answer: "кіт",
+        explanation: "",
+      },
+    ]);
+  });
+
+  it("parses JSON wrapped in a markdown code fence", () => {
+    const cards = parseImportJson(`
+      \`\`\`json
+      [
+        {
+          "question": "dog",
+          "answer": "пес"
+        }
+      ]
+      \`\`\`
+    `);
+
+    expect(cards).toMatchObject([
+      {
+        question: "dog",
+        answer: "пес",
+      },
+    ]);
+  });
+
   it("skips invalid card entries", () => {
     const cards = parseImportJson(`
       [
@@ -71,5 +108,11 @@ describe("import card JSON parser", () => {
 
   it("returns null when the text is not JSON", () => {
     expect(parseImportJson("cat - кіт")).toBeNull();
+  });
+
+  it("detects JSON-like import text", () => {
+    expect(isJsonLikeImportText('[{ "question": "cat"')).toBe(true);
+    expect(isJsonLikeImportText("```json\n[]\n```")).toBe(true);
+    expect(isJsonLikeImportText("cat - кіт")).toBe(false);
   });
 });
