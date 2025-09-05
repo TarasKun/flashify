@@ -9,6 +9,10 @@ describe("AI import prompt", () => {
     expect(prompt).toContain(
       "Use the deck/topic as context when the source text is short or ambiguous.",
     );
-    expect(prompt).toContain("Return only JSON");
+    expect(prompt).toContain("Return one JSON code block");
+    expect(prompt).toContain("```json");
+    expect(prompt).toContain(
+      'Example: [\\"HTML\\", \\"CSS\\", \\"JavaScript\\"] is an array.',
+    );
   });
 });

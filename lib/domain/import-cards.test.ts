@@ -89,6 +89,26 @@ describe("import card JSON parser", () => {
     ]);
   });
 
+  it("parses escaped quotes inside explanation strings", () => {
+    const cards = parseImportJson(`
+      [
+        {
+          "question": "What is an array?",
+          "answer": "A collection of values stored in a single variable.",
+          "explanation": "Example: [\\"HTML\\", \\"CSS\\", \\"JavaScript\\"] is an array of strings."
+        }
+      ]
+    `);
+
+    expect(cards).toMatchObject([
+      {
+        question: "What is an array?",
+        explanation:
+          'Example: ["HTML", "CSS", "JavaScript"] is an array of strings.',
+      },
+    ]);
+  });
+
   it("skips invalid card entries", () => {
     const cards = parseImportJson(`
       [
