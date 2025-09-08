@@ -41,6 +41,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isImportingText, setIsImportingText] = useState(false);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
+  const [importPreviewMessage, setImportPreviewMessage] = useState("");
   const [hasCopiedImportPrompt, setHasCopiedImportPrompt] = useState(false);
   const [isImportingCards, setIsImportingCards] = useState(false);
   const [importPreviewCards, setImportPreviewCards] = useState<
@@ -142,6 +143,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     }
 
     setImportError("");
+    setImportPreviewMessage("");
     setImportPreviewCards([]);
     setIsImportingCards(true);
 
@@ -153,7 +155,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           throw new Error("No valid cards were found in this JSON.");
         }
 
+        setImportText("");
         setImportPreviewCards(jsonCards);
+        setImportPreviewMessage(`Preview ready: ${jsonCards.length} cards`);
         return;
       }
 
@@ -197,7 +201,9 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         throw new Error("No cards were found in this text.");
       }
 
+      setImportText("");
       setImportPreviewCards(parsedCards);
+      setImportPreviewMessage(`Preview ready: ${parsedCards.length} cards`);
     } catch (error) {
       setImportError(
         error instanceof Error ? error.message : "Import failed.",
@@ -264,11 +270,13 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     }
 
     setImportError("");
+    setImportPreviewMessage("");
     setIsImportingCards(true);
 
     try {
       await storage.createCards(cardsToSave);
       setImportText("");
+      setImportPreviewMessage("");
       setImportPreviewCards([]);
       setIsImportingText(false);
       await loadDeck();
@@ -533,6 +541,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 setImportText(event.target.value);
                 setImportPreviewCards([]);
                 setImportError("");
+                setImportPreviewMessage("");
               }}
               placeholder='[
   {
@@ -551,6 +560,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             </p>
           ) : null}
 
+          {importPreviewMessage ? (
+            <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-success)] bg-[var(--app-success-soft)] p-3 text-sm font-black text-[var(--app-success)]">
+              {importPreviewMessage}
+            </p>
+          ) : null}
+
           <div className="grid gap-2">
             <button
               className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
@@ -562,12 +577,20 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             </button>
             <div className="grid grid-cols-2 gap-2">
               <button
-                className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
+                className={`flex h-12 items-center justify-center gap-2 rounded-full px-4 font-black text-[var(--app-primary-contrast)] transition ${
+                  importPreviewMessage
+                    ? "bg-[var(--app-success)] shadow-[0_0_0_4px_var(--app-success-soft)]"
+                    : "bg-[var(--app-primary)]"
+                } disabled:opacity-70`}
                 disabled={isImportingCards || !importText.trim()}
                 type="submit"
               >
                 <FileInput aria-hidden="true" size={18} strokeWidth={2.3} />
-                {isImportingCards ? "Parsing" : "Preview"}
+                {isImportingCards
+                  ? "Parsing"
+                  : importPreviewMessage
+                    ? "Preview ready"
+                    : "Preview"}
               </button>
               <button
                 className="flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-4 font-black dark:bg-white/10"
@@ -575,6 +598,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                   setIsImportingText(false);
                   setImportPreviewCards([]);
                   setImportError("");
+                  setImportPreviewMessage("");
                 }}
                 type="button"
               >
