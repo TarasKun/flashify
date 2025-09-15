@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Menu, Plus, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Download,
+  Menu,
+  Plus,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,7 +19,11 @@ import {
   useState,
 } from "react";
 import type { Deck } from "@/lib/domain";
-import { createIndexedDbStorage, seedDemoData } from "@/lib/storage";
+import {
+  createIndexedDbStorage,
+  exportFlashifyData,
+  seedDemoData,
+} from "@/lib/storage";
 import { ThemeToggle } from "./theme-toggle";
 
 const ACTIVE_DECK_STORAGE_KEY = "flashify.activeDeckId";
@@ -29,6 +40,8 @@ export function AppShell({ children }: AppShellProps) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
   const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const [isExportingData, setIsExportingData] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
 
@@ -91,6 +104,35 @@ export function AppShell({ children }: AppShellProps) {
     }
   }
 
+  async function exportData() {
+    if (isExportingData) {
+      return;
+    }
+
+    setExportError("");
+    setIsExportingData(true);
+
+    try {
+      const data = await exportFlashifyData(storage);
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `flashify-backup-${getDateStamp(new Date())}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch {
+      setExportError("Export failed.");
+    } finally {
+      setIsExportingData(false);
+    }
+  }
+
   return (
     <main className="app-screen h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
       <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
@@ -142,13 +184,27 @@ export function AppShell({ children }: AppShellProps) {
           </button>
 
           {isAppMenuOpen ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
               <div className="flex items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 py-3">
                 <span className="text-sm font-black text-[var(--app-text-muted)]">
                   Theme
                 </span>
                 <ThemeToggle />
               </div>
+              <button
+                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-sm font-black text-[var(--app-text)] disabled:opacity-60"
+                disabled={isExportingData}
+                onClick={exportData}
+                type="button"
+              >
+                <span>{isExportingData ? "Exporting" : "Export data"}</span>
+                <Download aria-hidden="true" size={18} strokeWidth={2.3} />
+              </button>
+              {exportError ? (
+                <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-bold text-[var(--app-danger)]">
+                  {exportError}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -244,4 +300,8 @@ function saveActiveDeckId(deckId: string) {
       },
     }),
   );
+}
+
+function getDateStamp(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
