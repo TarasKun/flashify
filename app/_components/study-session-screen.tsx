@@ -32,9 +32,15 @@ type StudyCard = {
 
 type StudyAnswer = "know" | "dontKnow";
 
+type OutgoingStudyCard = {
+  answer: StudyAnswer;
+  isAnswerVisible: boolean;
+  studyCard: StudyCard;
+};
+
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
-const ANSWER_ANIMATION_MS = 1300;
+const ANSWER_ANIMATION_MS = 760;
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -46,9 +52,8 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
-  const [answerAnimation, setAnswerAnimation] = useState<StudyAnswer | null>(
-    null,
-  );
+  const [outgoingStudyCard, setOutgoingStudyCard] =
+    useState<OutgoingStudyCard | null>(null);
   const dragStartXRef = useRef<number | null>(null);
   const dragLastOffsetRef = useRef(0);
   const hasDraggedRef = useRef(false);
@@ -94,15 +99,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const currentStudyCard = cards[0] ?? null;
 
   const submitAnswer = useCallback(
-    async (answer: StudyAnswer) => {
-      if (!currentStudyCard) {
-        return;
-      }
-
+    async (studyCard: StudyCard, answer: StudyAnswer) => {
       try {
         const updatedCard = answerCard({
-          card: currentStudyCard.card,
-          direction: currentStudyCard.direction,
+          card: studyCard.card,
+          direction: studyCard.direction,
           answer,
           now: new Date(),
         });
@@ -111,28 +112,47 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         await loadStudyCards();
         setDragOffset(0);
       } finally {
-        setAnswerAnimation(null);
         setIsSubmitting(false);
       }
     },
-    [currentStudyCard, loadStudyCards, storage],
+    [loadStudyCards, storage],
   );
 
   const answerWithAnimation = useCallback(
     (answer: StudyAnswer) => {
-      if (!currentStudyCard || isSubmitting || answerAnimation) {
+      if (!currentStudyCard || isSubmitting || outgoingStudyCard) {
         return;
       }
 
+      const answeredStudyCard = currentStudyCard;
+
       setIsSubmitting(true);
-      setAnswerAnimation(answer);
+      setOutgoingStudyCard({
+        answer,
+        isAnswerVisible,
+        studyCard: answeredStudyCard,
+      });
+      setCards((currentCards) =>
+        currentCards[0]?.card.id === answeredStudyCard.card.id
+          ? currentCards.slice(1)
+          : currentCards,
+      );
+      setIsAnswerVisible(false);
 
       answerTimerRef.current = window.setTimeout(() => {
         answerTimerRef.current = null;
-        void submitAnswer(answer);
+        setOutgoingStudyCard(null);
       }, ANSWER_ANIMATION_MS);
+
+      void submitAnswer(answeredStudyCard, answer);
     },
-    [answerAnimation, currentStudyCard, isSubmitting, submitAnswer],
+    [
+      currentStudyCard,
+      isAnswerVisible,
+      isSubmitting,
+      outgoingStudyCard,
+      submitAnswer,
+    ],
   );
 
   useEffect(() => {
@@ -276,20 +296,15 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       : studyCard.card.question;
   }
 
-  const animationDirection =
-    answerAnimation === "know" ? 1 : answerAnimation === "dontKnow" ? -1 : 0;
-  const activeOffset =
-    animationDirection !== 0 ? animationDirection * SWIPE_THRESHOLD : dragOffset;
+  const activeOffset = dragOffset;
   const tintIntensity =
-    animationDirection !== 0
-      ? 1
-      : Math.min(Math.abs(activeOffset) / SWIPE_THRESHOLD, 1);
-  const tintColor =
-    activeOffset >= 0 ? "16 155 100" : "229 72 77";
-  const cardTransform =
-    animationDirection !== 0
-      ? `translate3d(${animationDirection * 115}vw, -9rem, 0) rotate(${animationDirection * 24}deg) scale(0.96)`
-      : `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`;
+    Math.min(Math.abs(activeOffset) / SWIPE_THRESHOLD, 1);
+  const tintColor = activeOffset >= 0 ? "16 155 100" : "229 72 77";
+  const currentCardStyle = getStudyCardStyle({
+    dragOffset,
+    tintColor,
+    tintIntensity,
+  });
 
   return (
     <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden">
@@ -297,52 +312,60 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
         </div>
-      ) : currentStudyCard ? (
+      ) : currentStudyCard || outgoingStudyCard ? (
         <>
-          <div
-            aria-label="Flashcard"
-            className="flashcard-perspective min-h-0 w-full max-w-full flex-1 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
-            onPointerCancel={handlePointerCancel}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            role="button"
-            style={{
-              backgroundImage: `linear-gradient(rgba(${tintColor} / ${tintIntensity * 0.34}), rgba(${tintColor} / ${tintIntensity * 0.2})), var(--app-card-gradient)`,
-              borderColor:
-                activeOffset === 0
-                  ? undefined
-                  : `rgba(${tintColor} / ${0.28 + tintIntensity * 0.42})`,
-              opacity: animationDirection !== 0 ? 0 : 1,
-              transform: cardTransform,
-              transition:
-                animationDirection !== 0
-                  ? `transform ${ANSWER_ANIMATION_MS}ms cubic-bezier(0.19, 1, 0.22, 1), opacity ${ANSWER_ANIMATION_MS}ms ease`
-                  : dragOffset === 0
-                    ? "transform 160ms ease, background-color 160ms ease, border-color 160ms ease"
-                    : "none",
-            }}
-            tabIndex={0}
-          >
-            <div
-              className="flashcard-inner relative h-full min-h-0"
-              data-flipped={isAnswerVisible}
-            >
-              <FlashcardFace
-                text={getPromptText(currentStudyCard)}
-              />
-              <FlashcardFace
-                isBack
-                text={getAnswerText(currentStudyCard)}
-              />
-            </div>
+          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1">
+            <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-deep" />
+            <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-near" />
+            {currentStudyCard ? (
+              <div
+                aria-label="Flashcard"
+                className="flashcard-perspective absolute inset-0 z-10 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
+                onPointerCancel={handlePointerCancel}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                role="button"
+                style={currentCardStyle}
+                tabIndex={0}
+              >
+                <div
+                  className="flashcard-inner relative h-full min-h-0"
+                  data-flipped={isAnswerVisible}
+                >
+                  <FlashcardFace text={getPromptText(currentStudyCard)} />
+                  <FlashcardFace isBack text={getAnswerText(currentStudyCard)} />
+                </div>
+              </div>
+            ) : null}
+
+            {outgoingStudyCard ? (
+              <div
+                aria-hidden="true"
+                className="flashcard-perspective pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
+                style={getOutgoingCardStyle(outgoingStudyCard.answer)}
+              >
+                <div
+                  className="flashcard-inner relative h-full min-h-0"
+                  data-flipped={outgoingStudyCard.isAnswerVisible}
+                >
+                  <FlashcardFace
+                    text={getPromptText(outgoingStudyCard.studyCard)}
+                  />
+                  <FlashcardFace
+                    isBack
+                    text={getAnswerText(outgoingStudyCard.studyCard)}
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid shrink-0 grid-cols-2 gap-3">
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-black text-[var(--app-danger)] shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={(event) => handleAnswerClick(event, "dontKnow")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !currentStudyCard}
               type="button"
             >
               <X aria-hidden="true" size={20} strokeWidth={2.4} />
@@ -351,7 +374,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={(event) => handleAnswerClick(event, "know")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !currentStudyCard}
               type="button"
             >
               <Check aria-hidden="true" size={20} strokeWidth={2.4} />
@@ -474,4 +497,42 @@ function moveCardToFront(cards: Card[], cardId: string): Card[] {
   const [card] = nextCards.splice(cardIndex, 1);
 
   return [card, ...nextCards];
+}
+
+function getStudyCardStyle({
+  dragOffset,
+  tintColor,
+  tintIntensity,
+}: {
+  dragOffset: number;
+  tintColor: string;
+  tintIntensity: number;
+}) {
+  return {
+    backgroundImage: `linear-gradient(rgba(${tintColor} / ${tintIntensity * 0.34}), rgba(${tintColor} / ${tintIntensity * 0.2})), var(--app-card-gradient)`,
+    borderColor:
+      dragOffset === 0
+        ? undefined
+        : `rgba(${tintColor} / ${0.28 + tintIntensity * 0.42})`,
+    transform: `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`,
+    transition:
+      dragOffset === 0
+        ? "transform 160ms ease, background-color 160ms ease, border-color 160ms ease"
+        : "none",
+  };
+}
+
+function getOutgoingCardStyle(answer: StudyAnswer) {
+  const direction = answer === "know" ? 1 : -1;
+  const tintColor = answer === "know" ? "16 155 100" : "229 72 77";
+  const animationName =
+    answer === "know" ? "flashcard-exit-right" : "flashcard-exit-left";
+
+  return {
+    animation: `${animationName} ${ANSWER_ANIMATION_MS}ms cubic-bezier(0.19, 1, 0.22, 1) forwards`,
+    backgroundImage: `linear-gradient(rgba(${tintColor} / 0.36), rgba(${tintColor} / 0.22)), var(--app-card-gradient)`,
+    borderColor: `rgba(${tintColor} / 0.72)`,
+    "--flashcard-exit-x": `${direction * 118}vw`,
+    "--flashcard-exit-rotate": `${direction * 26}deg`,
+  };
 }
