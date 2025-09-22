@@ -35,6 +35,7 @@ type StudyAnswer = "know" | "dontKnow";
 type OutgoingStudyCard = {
   answer: StudyAnswer;
   isAnswerVisible: boolean;
+  startOffset: number;
   studyCard: StudyCard;
 };
 
@@ -119,7 +120,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   );
 
   const answerWithAnimation = useCallback(
-    (answer: StudyAnswer) => {
+    (answer: StudyAnswer, startOffset = 0) => {
       if (!currentStudyCard || isSubmitting || outgoingStudyCard) {
         return;
       }
@@ -130,6 +131,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       setOutgoingStudyCard({
         answer,
         isAnswerVisible,
+        startOffset,
         studyCard: answeredStudyCard,
       });
       setCards((currentCards) =>
@@ -138,6 +140,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           : currentCards,
       );
       setIsAnswerVisible(false);
+      setDragOffset(0);
 
       answerTimerRef.current = window.setTimeout(() => {
         answerTimerRef.current = null;
@@ -220,12 +223,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     const offset = event.clientX - dragStartXRef.current;
     const wasTap = !hasDraggedRef.current && Math.abs(offset) <= TAP_THRESHOLD;
 
-    resetDragState(event);
-
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
-      answerWithAnimation(offset > 0 ? "know" : "dontKnow");
+      finishDragGesture(event, { resetOffset: false });
+      answerWithAnimation(offset > 0 ? "know" : "dontKnow", offset);
       return;
     }
+
+    finishDragGesture(event);
 
     if (wasTap) {
       setIsAnswerVisible((currentValue) => !currentValue);
@@ -235,14 +239,19 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
     const offset = dragLastOffsetRef.current;
 
-    resetDragState(event);
-
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
-      answerWithAnimation(offset > 0 ? "know" : "dontKnow");
+      finishDragGesture(event, { resetOffset: false });
+      answerWithAnimation(offset > 0 ? "know" : "dontKnow", offset);
+      return;
     }
+
+    finishDragGesture(event);
   }
 
-  function resetDragState(event: PointerEvent<HTMLDivElement>) {
+  function finishDragGesture(
+    event: PointerEvent<HTMLDivElement>,
+    { resetOffset = true }: { resetOffset?: boolean } = {},
+  ) {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -250,7 +259,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     dragStartXRef.current = null;
     dragLastOffsetRef.current = 0;
     hasDraggedRef.current = false;
-    setDragOffset(0);
+
+    if (resetOffset) {
+      setDragOffset(0);
+    }
   }
 
   function handleAnswerClick(
@@ -343,7 +355,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <div
                 aria-hidden="true"
                 className="flashcard-perspective pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
-                style={getOutgoingCardStyle(outgoingStudyCard.answer)}
+                style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
                   className="flashcard-inner relative h-full min-h-0"
@@ -522,11 +534,14 @@ function getStudyCardStyle({
   };
 }
 
-function getOutgoingCardStyle(answer: StudyAnswer) {
-  const direction = answer === "know" ? 1 : -1;
-  const tintColor = answer === "know" ? "16 155 100" : "229 72 77";
+function getOutgoingCardStyle(outgoingStudyCard: OutgoingStudyCard) {
+  const direction = outgoingStudyCard.answer === "know" ? 1 : -1;
+  const tintColor =
+    outgoingStudyCard.answer === "know" ? "16 155 100" : "229 72 77";
   const animationName =
-    answer === "know" ? "flashcard-exit-right" : "flashcard-exit-left";
+    outgoingStudyCard.answer === "know"
+      ? "flashcard-exit-right"
+      : "flashcard-exit-left";
 
   return {
     animation: `${animationName} ${ANSWER_ANIMATION_MS}ms cubic-bezier(0.19, 1, 0.22, 1) forwards`,
@@ -534,5 +549,7 @@ function getOutgoingCardStyle(answer: StudyAnswer) {
     borderColor: `rgba(${tintColor} / 0.72)`,
     "--flashcard-exit-x": `${direction * 118}vw`,
     "--flashcard-exit-rotate": `${direction * 26}deg`,
+    "--flashcard-start-rotate": `${outgoingStudyCard.startOffset / 22}deg`,
+    "--flashcard-start-x": `${outgoingStudyCard.startOffset}px`,
   };
 }

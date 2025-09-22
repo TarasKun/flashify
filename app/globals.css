@@ -209,7 +209,7 @@ button {
 @keyframes flashcard-exit-right {
   from {
     opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    transform: translate3d(var(--flashcard-start-x), 0, 0) rotate(var(--flashcard-start-rotate)) scale(1);
   }
 
   to {
@@ -221,7 +221,7 @@ button {
 @keyframes flashcard-exit-left {
   from {
     opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    transform: translate3d(var(--flashcard-start-x), 0, 0) rotate(var(--flashcard-start-rotate)) scale(1);
   }
 
   to {
