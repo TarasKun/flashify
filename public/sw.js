@@ -1,4 +1,5 @@
-const CACHE_VERSION = "flashify-shell-v2";
+const CACHE_VERSION = "flashify-shell-v3";
+const APP_SHELL_URL = "/";
 const SHELL_ASSETS = ["/", "/icons/icon.svg", "/icons/maskable-icon.svg"];
 const CACHEABLE_DESTINATIONS = new Set([
   "font",
@@ -40,24 +41,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
-    );
-    return;
-  }
-
   const requestUrl = new URL(request.url);
 
   if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  if (requestUrl.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(handleNavigationRequest(request));
     return;
   }
 
@@ -65,21 +60,43 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      return (
-        cachedResponse ||
-        fetch(request).then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-
-          return response;
-        })
-      );
-    }),
-  );
+  event.respondWith(handleAssetRequest(request));
 });
+
+async function handleNavigationRequest(request) {
+  const cachedResponse = await caches.match(request);
+
+  try {
+    const response = await fetch(request);
+
+    if (response.ok) {
+      const cache = await caches.open(CACHE_VERSION);
+      await cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch {
+    return (
+      cachedResponse ||
+      (await caches.match(APP_SHELL_URL)) ||
+      Response.error()
+    );
+  }
+}
+
+async function handleAssetRequest(request) {
+  const cachedResponse = await caches.match(request);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  const response = await fetch(request);
+
+  if (response.ok) {
+    const cache = await caches.open(CACHE_VERSION);
+    await cache.put(request, response.clone());
+  }
+
+  return response;
+}

@@ -7,6 +7,7 @@ import {
   Menu,
   Plus,
   Settings,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,12 +17,15 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Deck } from "@/lib/domain";
 import {
   createIndexedDbStorage,
   exportFlashifyData,
+  parseFlashifyBackupJson,
+  restoreFlashifyData,
   seedDemoData,
 } from "@/lib/storage";
 import { ThemeToggle } from "./theme-toggle";
@@ -40,10 +44,13 @@ export function AppShell({ children }: AppShellProps) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
   const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
+  const [dataTransferMessage, setDataTransferMessage] = useState("");
   const [exportError, setExportError] = useState("");
   const [isExportingData, setIsExportingData] = useState(false);
+  const [isImportingData, setIsImportingData] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadDecks = useCallback(async () => {
     await seedDemoData(storage);
@@ -110,6 +117,7 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     setExportError("");
+    setDataTransferMessage("");
     setIsExportingData(true);
 
     try {
@@ -126,10 +134,55 @@ export function AppShell({ children }: AppShellProps) {
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setDataTransferMessage("Backup exported.");
     } catch {
       setExportError("Export failed.");
     } finally {
       setIsExportingData(false);
+    }
+  }
+
+  async function importBackupFile(file: File) {
+    if (isImportingData) {
+      return;
+    }
+
+    const shouldRestore = window.confirm(
+      "Importing a backup will replace all local decks, cards, progress, and settings. Continue?",
+    );
+
+    if (!shouldRestore) {
+      return;
+    }
+
+    setExportError("");
+    setDataTransferMessage("");
+    setIsImportingData(true);
+
+    try {
+      const backup = parseFlashifyBackupJson(await file.text());
+
+      if (!backup) {
+        throw new Error("Invalid Flashify backup file.");
+      }
+
+      await restoreFlashifyData(storage, backup);
+      await loadDecks();
+      setDataTransferMessage("Backup imported.");
+
+      if (pathname !== "/") {
+        router.push("/");
+      }
+    } catch (error) {
+      setExportError(
+        error instanceof Error ? error.message : "Import failed.",
+      );
+    } finally {
+      setIsImportingData(false);
+
+      if (backupInputRef.current) {
+        backupInputRef.current.value = "";
+      }
     }
   }
 
@@ -185,6 +238,19 @@ export function AppShell({ children }: AppShellProps) {
 
           {isAppMenuOpen ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+              <input
+                ref={backupInputRef}
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+
+                  if (file) {
+                    void importBackupFile(file);
+                  }
+                }}
+                type="file"
+              />
               <div className="flex items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 py-3">
                 <span className="text-sm font-black text-[var(--app-text-muted)]">
                   Theme
@@ -200,6 +266,20 @@ export function AppShell({ children }: AppShellProps) {
                 <span>{isExportingData ? "Exporting" : "Export data"}</span>
                 <Download aria-hidden="true" size={18} strokeWidth={2.3} />
               </button>
+              <button
+                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-sm font-black text-[var(--app-text)] disabled:opacity-60"
+                disabled={isImportingData}
+                onClick={() => backupInputRef.current?.click()}
+                type="button"
+              >
+                <span>{isImportingData ? "Importing" : "Import data"}</span>
+                <Upload aria-hidden="true" size={18} strokeWidth={2.3} />
+              </button>
+              {dataTransferMessage ? (
+                <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-success)] bg-[var(--app-success-soft)] p-3 text-sm font-bold text-[var(--app-success)]">
+                  {dataTransferMessage}
+                </p>
+              ) : null}
               {exportError ? (
                 <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-bold text-[var(--app-danger)]">
                   {exportError}

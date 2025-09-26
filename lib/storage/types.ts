@@ -45,6 +45,12 @@ export type FlashifyStorage = {
 
   getSettings(): Promise<AppSettings>;
   updateSettings(input: Partial<AppSettings>): Promise<AppSettings>;
+
+  replaceAllData(input: {
+    cards: Card[];
+    decks: Deck[];
+    settings: AppSettings;
+  }): Promise<void>;
 };
 
 export class StorageRecordNotFoundError extends Error {

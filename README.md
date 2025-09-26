@@ -18,6 +18,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 The MVP plan lives in [`MVP_SPEC.md`](./MVP_SPEC.md).
+Deployment notes live in [`DEPLOY.md`](./DEPLOY.md).
 
 ## Environment
 

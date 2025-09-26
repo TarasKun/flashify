@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyCardProgress } from "../domain";
 import type { Card, Deck } from "../domain";
-import { exportFlashifyData } from "./export";
+import {
+  exportFlashifyData,
+  parseFlashifyBackupJson,
+  restoreFlashifyData,
+} from "./export";
 
 describe("Flashify export", () => {
   it("exports settings, decks, and cards grouped by deck", async () => {
@@ -43,6 +47,83 @@ describe("Flashify export", () => {
         },
       ],
     });
+  });
+
+  it("parses a valid backup JSON file", () => {
+    const deck = makeDeck("english", "English");
+    const card = makeCard("cat", "english", "cat", "кіт");
+    const backup = {
+      version: 1,
+      exportedAt: "2025-06-01T12:00:00.000Z",
+      settings: {
+        theme: "light",
+      },
+      decks: [
+        {
+          deck,
+          cards: [card],
+        },
+      ],
+    };
+
+    expect(parseFlashifyBackupJson(JSON.stringify(backup))).toEqual(backup);
+  });
+
+  it("rejects backup cards that point at another deck", () => {
+    const deck = makeDeck("english", "English");
+    const card = makeCard("cat", "programming", "cat", "кіт");
+    const backup = {
+      version: 1,
+      exportedAt: "2025-06-01T12:00:00.000Z",
+      settings: {
+        theme: "system",
+      },
+      decks: [
+        {
+          deck,
+          cards: [card],
+        },
+      ],
+    };
+
+    expect(parseFlashifyBackupJson(JSON.stringify(backup))).toBeNull();
+  });
+
+  it("restores a backup by replacing storage data", async () => {
+    const deck = makeDeck("english", "English");
+    const card = makeCard("cat", "english", "cat", "кіт");
+    const calls: unknown[] = [];
+
+    await restoreFlashifyData(
+      {
+        replaceAllData: async (input) => {
+          calls.push(input);
+        },
+      },
+      {
+        version: 1,
+        exportedAt: "2025-06-01T12:00:00.000Z",
+        settings: {
+          theme: "dark",
+        },
+        decks: [
+          {
+            deck,
+            cards: [card],
+          },
+        ],
+      },
+    );
+
+    expect(calls).toEqual([
+      {
+        decks: [deck],
+        cards: [card],
+        settings: {
+          theme: "dark",
+        },
+      },
+    ]);
   });
 });
 

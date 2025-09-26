@@ -29,6 +29,7 @@ Expected result:
 - Previously visited deck and study pages can reload from cache.
 - IndexedDB decks, cards, and progress are still available.
 - Studying existing local cards still works.
+- API calls are not cached by the service worker.
 
 ## Online-Only Actions
 
@@ -44,3 +45,7 @@ show the cached explanation without making a network request.
 
 After deploying to Vercel, repeat the same flow on the deployed URL and confirm
 the browser offers app installability.
+
+Before testing install/uninstall flows, use `Export data` from the app menu and
+keep the JSON backup. Use `Import data` to restore decks, cards, settings, and
+study progress.

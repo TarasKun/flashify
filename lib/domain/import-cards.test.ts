@@ -109,6 +109,38 @@ describe("import card JSON parser", () => {
     ]);
   });
 
+  it("smoke-tests the external AI JSON import shape", () => {
+    const cards = parseImportJson(`
+      {
+        "cards": [
+          {
+            "question": "What is a variable?",
+            "answer": "A named container for storing a value in a program.",
+            "explanation": "Example: let age = 25; stores the number 25 in a variable named age."
+          },
+          {
+            "question": "What is a function?",
+            "answer": "A reusable block of code that performs a specific task."
+          }
+        ]
+      }
+    `);
+
+    expect(cards).toMatchObject([
+      {
+        question: "What is a variable?",
+        answer: "A named container for storing a value in a program.",
+        explanation:
+          "Example: let age = 25; stores the number 25 in a variable named age.",
+      },
+      {
+        question: "What is a function?",
+        answer: "A reusable block of code that performs a specific task.",
+        explanation: "",
+      },
+    ]);
+  });
+
   it("skips invalid card entries", () => {
     const cards = parseImportJson(`
       [

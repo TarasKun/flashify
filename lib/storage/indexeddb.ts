@@ -246,6 +246,32 @@ class IndexedDbFlashifyStorage implements FlashifyStorage {
     };
   }
 
+  async replaceAllData(input: {
+    cards: Card[];
+    decks: Deck[];
+    settings: AppSettings;
+  }): Promise<void> {
+    const db = await this.getDb();
+    const tx = db.transaction([DECKS_STORE, CARDS_STORE, SETTINGS_STORE], "readwrite");
+
+    const decksStore = tx.objectStore(DECKS_STORE);
+    const cardsStore = tx.objectStore(CARDS_STORE);
+    const settingsStore = tx.objectStore(SETTINGS_STORE);
+
+    decksStore.clear();
+    cardsStore.clear();
+    settingsStore.clear();
+
+    input.decks.forEach((deck) => decksStore.put(deck));
+    input.cards.forEach((card) => cardsStore.put(card));
+    settingsStore.put({
+      id: APP_SETTINGS_ID,
+      theme: input.settings.theme,
+    } satisfies SettingsRecord);
+
+    await waitForTransaction(tx);
+  }
+
   private getDb(): Promise<IDBDatabase> {
     if (!this.dbPromise) {
       this.dbPromise = openDatabase();
