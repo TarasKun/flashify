@@ -8,7 +8,7 @@ need login or a database.
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run test
 npm run build
 npm run start
@@ -26,9 +26,18 @@ Replace `192.168.1.146` with the Mac's active LAN IP.
 
 ## Vercel Free Tier
 
-1. Import the GitHub repository into Vercel.
-2. Keep the default Next.js build settings.
-3. Add environment variables:
+1. Push `main` to GitHub.
+2. Import the GitHub repository into Vercel.
+3. Keep the default Next.js build settings:
+
+```text
+Framework Preset: Next.js
+Build Command: npm run build
+Install Command: npm install
+Output Directory: .next
+```
+
+4. Add environment variables:
 
 ```env
 OPENROUTER_API_KEY=your-openrouter-key
@@ -39,6 +48,9 @@ OPENROUTER_APP_NAME=Flashify
 
 `OPENROUTER_API_KEY` must stay server-side. Do not create a
 `NEXT_PUBLIC_OPENROUTER_API_KEY`.
+
+`NEXT_ALLOWED_DEV_ORIGINS` is only for local phone testing and should not be set
+on Vercel.
 
 ## PWA Check After Deploy
 
