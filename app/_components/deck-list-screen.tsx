@@ -104,7 +104,7 @@ export function DeckListScreen() {
           </h2>
         </div>
 
-        <div className="mt-auto grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
+        <div className="mt-auto grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)]">
           <Metric label="To learn" tone="primary" value={activeCardsCount} />
           <Metric
             label="Practiced"
@@ -117,7 +117,7 @@ export function DeckListScreen() {
 
       <Link
         aria-disabled={!activeDeckState}
-        className="flex h-16 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-lg font-black uppercase tracking-[0.08em] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black uppercase tracking-[0.08em] text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
         href={activeDeckState ? `/decks/${activeDeckState.deck.id}/study` : "/"}
       >
         <Play aria-hidden="true" size={21} strokeWidth={2.4} />

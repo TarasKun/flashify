@@ -40,7 +40,7 @@ export function createEmptyCardProgress(): CardProgress {
 export function selectActivePool(
   cards: Card[],
   now: Date,
-  config: Pick<LearningConfig, "ACTIVE_POOL_SIZE"> = LEARNING_CONFIG,
+  config: { ACTIVE_POOL_SIZE: number } = LEARNING_CONFIG,
 ): Card[] {
   return cards
     .filter((card) => isEligibleForStudy(card, now))
@@ -159,7 +159,7 @@ function getStudyPriority(card: Card, now: Date): StudyPriority {
   }
 
   if (card.status === "new") {
-    return 2;
+    return 3;
   }
 
   return 4;

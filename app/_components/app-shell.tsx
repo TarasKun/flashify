@@ -51,6 +51,7 @@ export function AppShell({ children }: AppShellProps) {
   const [newDeckName, setNewDeckName] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const backupInputRef = useRef<HTMLInputElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   const loadDecks = useCallback(async () => {
     await seedDemoData(storage);
@@ -76,6 +77,42 @@ export function AppShell({ children }: AppShellProps) {
   }, [loadDecks, pathname]);
 
   const deckNavigation = getDeckNavigation(pathname);
+  const isStudyRoute = /^\/decks\/[^/]+\/study$/.test(pathname);
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!isDeckMenuOpen && !isAppMenuOpen) {
+        return;
+      }
+
+      if (
+        event.target instanceof Node &&
+        headerRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+
+      setIsDeckMenuOpen(false);
+      setIsAppMenuOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      setIsDeckMenuOpen(false);
+      setIsAppMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAppMenuOpen, isDeckMenuOpen]);
 
   function selectDeck(deckId: string) {
     setActiveDeckId(deckId);
@@ -189,7 +226,10 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <main className="app-screen h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
       <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
-        <header className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3">
+        <header
+          className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
+          ref={headerRef}
+        >
           {deckNavigation ? (
             <Link
               aria-label={deckNavigation.ariaLabel}
@@ -252,13 +292,13 @@ export function AppShell({ children }: AppShellProps) {
                 type="file"
               />
               <div className="flex items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 py-3">
-                <span className="text-sm font-black text-[var(--app-text-muted)]">
+                <span className="text-xs font-black text-[var(--app-text-muted)]">
                   Theme
                 </span>
                 <ThemeToggle />
               </div>
               <button
-                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-sm font-black text-[var(--app-text)] disabled:opacity-60"
+                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-xs font-black text-[var(--app-text)] disabled:opacity-60"
                 disabled={isExportingData}
                 onClick={exportData}
                 type="button"
@@ -267,7 +307,7 @@ export function AppShell({ children }: AppShellProps) {
                 <Download aria-hidden="true" size={18} strokeWidth={2.3} />
               </button>
               <button
-                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-sm font-black text-[var(--app-text)] disabled:opacity-60"
+                className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-xs font-black text-[var(--app-text)] disabled:opacity-60"
                 disabled={isImportingData}
                 onClick={() => backupInputRef.current?.click()}
                 type="button"
@@ -292,7 +332,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
-                  className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-sm font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+                  className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-xs font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
                   onChange={(event) => setNewDeckName(event.target.value)}
                   placeholder="New deck"
                   value={newDeckName}
@@ -311,7 +351,7 @@ export function AppShell({ children }: AppShellProps) {
                 {decks.map((deck) => (
                   <div className="flex items-center gap-2" key={deck.id}>
                     <button
-                      className={`min-w-0 flex-1 rounded-[var(--app-radius-sm)] px-4 py-3 text-left text-sm font-black transition hover:bg-[var(--app-primary-soft)] ${
+                      className={`min-w-0 flex-1 rounded-[var(--app-radius-sm)] px-4 py-3 text-left text-xs font-black transition hover:bg-[var(--app-primary-soft)] ${
                         deck.id === activeDeckId
                           ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
                           : ""
@@ -339,7 +379,11 @@ export function AppShell({ children }: AppShellProps) {
           ) : null}
         </header>
 
-        <div className="mt-6 min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <div
+          className={`mt-6 min-h-0 flex-1 overflow-x-hidden ${
+            isStudyRoute ? "overflow-y-visible" : "overflow-y-auto"
+          }`}
+        >
           {children}
         </div>
       </div>

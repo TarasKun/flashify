@@ -15,6 +15,8 @@ import {
 import {
   answerCard,
   getNextStudyDirection,
+  isEligibleForStudy,
+  LEARNING_CONFIG,
   selectActivePool,
   type Card,
   type StudyDirection,
@@ -35,13 +37,22 @@ type StudyAnswer = "know" | "dontKnow";
 type OutgoingStudyCard = {
   answer: StudyAnswer;
   isAnswerVisible: boolean;
-  startOffset: number;
+  startOffset: DragOffset;
   studyCard: StudyCard;
+};
+
+type DragOffset = {
+  x: number;
+  y: number;
 };
 
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
 const ANSWER_ANIMATION_MS = 760;
+const EMPTY_DRAG_OFFSET: DragOffset = {
+  x: 0,
+  y: 0,
+};
 
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
@@ -49,24 +60,25 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [dragOffset, setDragOffset] = useState<DragOffset>(EMPTY_DRAG_OFFSET);
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
   const [outgoingStudyCard, setOutgoingStudyCard] =
     useState<OutgoingStudyCard | null>(null);
-  const dragStartXRef = useRef<number | null>(null);
-  const dragLastOffsetRef = useRef(0);
+  const dragStartRef = useRef<DragOffset | null>(null);
+  const dragLastOffsetRef = useRef<DragOffset>(EMPTY_DRAG_OFFSET);
   const hasDraggedRef = useRef(false);
   const answerTimerRef = useRef<number | null>(null);
 
   const loadStudyCards = useCallback(async (preferredCardId?: string) => {
     setIsLoading(true);
+    const now = new Date();
     const studyCards = await storage.listStudyCards({
       deckId,
-      now: new Date(),
+      now,
     });
-    const activePool = selectActivePool(studyCards, new Date());
+    const activePool = selectActivePool(studyCards, now);
     const orderedPool = preferredCardId
       ? moveCardToFront(activePool, preferredCardId)
       : activePool;
@@ -79,6 +91,33 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     );
     setIsAnswerVisible(false);
     setIsLoading(false);
+  }, [deckId, storage]);
+
+  const refillSessionQueue = useCallback(async () => {
+    const now = new Date();
+    const studyCards = await storage.listStudyCards({
+      deckId,
+      now,
+    });
+    const sortedCandidates = selectActivePool(studyCards, now, {
+      ACTIVE_POOL_SIZE: studyCards.length,
+    });
+
+    setCards((currentCards) => {
+      if (currentCards.length >= LEARNING_CONFIG.ACTIVE_POOL_SIZE) {
+        return currentCards;
+      }
+
+      const currentCardIds = new Set(
+        currentCards.map((studyCard) => studyCard.card.id),
+      );
+      const fillCards = sortedCandidates
+        .filter((card) => !currentCardIds.has(card.id))
+        .slice(0, LEARNING_CONFIG.ACTIVE_POOL_SIZE - currentCards.length)
+        .map(toStudyCard);
+
+      return [...currentCards, ...fillCards];
+    });
   }, [deckId, storage]);
 
   useEffect(() => {
@@ -102,25 +141,29 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const submitAnswer = useCallback(
     async (studyCard: StudyCard, answer: StudyAnswer) => {
       try {
+        const now = new Date();
         const updatedCard = answerCard({
           card: studyCard.card,
           direction: studyCard.direction,
           answer,
-          now: new Date(),
+          now,
         });
 
         await storage.saveCardProgress(updatedCard);
-        await loadStudyCards();
-        setDragOffset(0);
+        setCards((currentCards) =>
+          insertAnsweredCardInSessionQueue(currentCards, updatedCard, now),
+        );
+        await refillSessionQueue();
+        setDragOffset(EMPTY_DRAG_OFFSET);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [loadStudyCards, storage],
+    [refillSessionQueue, storage],
   );
 
   const answerWithAnimation = useCallback(
-    (answer: StudyAnswer, startOffset = 0) => {
+    (answer: StudyAnswer, startOffset: DragOffset = EMPTY_DRAG_OFFSET) => {
       if (!currentStudyCard || isSubmitting || outgoingStudyCard) {
         return;
       }
@@ -140,7 +183,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           : currentCards,
       );
       setIsAnswerVisible(false);
-      setDragOffset(0);
+      setDragOffset(EMPTY_DRAG_OFFSET);
 
       answerTimerRef.current = window.setTimeout(() => {
         answerTimerRef.current = null;
@@ -192,40 +235,50 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       return;
     }
 
-    dragStartXRef.current = event.clientX;
-    dragLastOffsetRef.current = 0;
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+    dragLastOffsetRef.current = EMPTY_DRAG_OFFSET;
     hasDraggedRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (dragStartXRef.current === null) {
+    if (dragStartRef.current === null) {
       return;
     }
 
-    const nextOffset = event.clientX - dragStartXRef.current;
+    const nextOffset = {
+      x: event.clientX - dragStartRef.current.x,
+      y: event.clientY - dragStartRef.current.y,
+    };
+    const hasMovedPastTapThreshold =
+      Math.hypot(nextOffset.x, nextOffset.y) > TAP_THRESHOLD;
 
     dragLastOffsetRef.current = nextOffset;
-    hasDraggedRef.current =
-      hasDraggedRef.current || Math.abs(nextOffset) > TAP_THRESHOLD;
+    hasDraggedRef.current = hasDraggedRef.current || hasMovedPastTapThreshold;
     setDragOffset(nextOffset);
 
-    if (Math.abs(nextOffset) > TAP_THRESHOLD) {
+    if (hasMovedPastTapThreshold) {
       event.preventDefault();
     }
   }
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
-    if (dragStartXRef.current === null) {
+    if (dragStartRef.current === null) {
       return;
     }
 
-    const offset = event.clientX - dragStartXRef.current;
-    const wasTap = !hasDraggedRef.current && Math.abs(offset) <= TAP_THRESHOLD;
+    const offset = {
+      x: event.clientX - dragStartRef.current.x,
+      y: event.clientY - dragStartRef.current.y,
+    };
+    const wasTap = !hasDraggedRef.current && Math.hypot(offset.x, offset.y) <= TAP_THRESHOLD;
 
-    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+    if (Math.abs(offset.x) >= SWIPE_THRESHOLD) {
       finishDragGesture(event, { resetOffset: false });
-      answerWithAnimation(offset > 0 ? "know" : "dontKnow", offset);
+      answerWithAnimation(offset.x > 0 ? "know" : "dontKnow", offset);
       return;
     }
 
@@ -239,9 +292,9 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
     const offset = dragLastOffsetRef.current;
 
-    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+    if (Math.abs(offset.x) >= SWIPE_THRESHOLD) {
       finishDragGesture(event, { resetOffset: false });
-      answerWithAnimation(offset > 0 ? "know" : "dontKnow", offset);
+      answerWithAnimation(offset.x > 0 ? "know" : "dontKnow", offset);
       return;
     }
 
@@ -256,12 +309,12 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    dragStartXRef.current = null;
-    dragLastOffsetRef.current = 0;
+    dragStartRef.current = null;
+    dragLastOffsetRef.current = EMPTY_DRAG_OFFSET;
     hasDraggedRef.current = false;
 
     if (resetOffset) {
-      setDragOffset(0);
+      setDragOffset(EMPTY_DRAG_OFFSET);
     }
   }
 
@@ -308,7 +361,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       : studyCard.card.question;
   }
 
-  const activeOffset = dragOffset;
+  const activeOffset = dragOffset.x;
   const tintIntensity =
     Math.min(Math.abs(activeOffset) / SWIPE_THRESHOLD, 1);
   const tintColor = activeOffset >= 0 ? "16 155 100" : "229 72 77";
@@ -319,7 +372,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   });
 
   return (
-    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden">
+    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-visible">
       {isLoading ? (
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
@@ -332,7 +385,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {currentStudyCard ? (
               <div
                 aria-label="Flashcard"
-                className="flashcard-perspective absolute inset-0 z-10 touch-none select-none overflow-hidden rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
+                className="flashcard-perspective absolute inset-0 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
                 onPointerCancel={handlePointerCancel}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -354,7 +407,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {outgoingStudyCard ? (
               <div
                 aria-hidden="true"
-                className="flashcard-perspective pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
+                className="flashcard-perspective pointer-events-none absolute inset-0 z-20 overflow-visible rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
                 style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
@@ -511,24 +564,47 @@ function moveCardToFront(cards: Card[], cardId: string): Card[] {
   return [card, ...nextCards];
 }
 
+function toStudyCard(card: Card): StudyCard {
+  return {
+    card,
+    direction: getNextStudyDirection(card),
+  };
+}
+
+function insertAnsweredCardInSessionQueue(
+  currentCards: StudyCard[],
+  updatedCard: Card,
+  now: Date,
+): StudyCard[] {
+  const cardsWithoutAnsweredCard = currentCards.filter(
+    (studyCard) => studyCard.card.id !== updatedCard.id,
+  );
+
+  if (!isEligibleForStudy(updatedCard, now)) {
+    return cardsWithoutAnsweredCard;
+  }
+
+  return [...cardsWithoutAnsweredCard, toStudyCard(updatedCard)];
+}
+
 function getStudyCardStyle({
   dragOffset,
   tintColor,
   tintIntensity,
 }: {
-  dragOffset: number;
+  dragOffset: DragOffset;
   tintColor: string;
   tintIntensity: number;
 }) {
   return {
     backgroundImage: `linear-gradient(rgba(${tintColor} / ${tintIntensity * 0.34}), rgba(${tintColor} / ${tintIntensity * 0.2})), var(--app-card-gradient)`,
     borderColor:
-      dragOffset === 0
+      dragOffset.x === 0
         ? undefined
         : `rgba(${tintColor} / ${0.28 + tintIntensity * 0.42})`,
-    transform: `translateX(${dragOffset}px) rotate(${dragOffset / 22}deg)`,
+    transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${dragOffset.x / 22}deg)`,
     transition:
-      dragOffset === 0
+      dragOffset.x === 0 && dragOffset.y === 0
         ? "transform 160ms ease, background-color 160ms ease, border-color 160ms ease"
         : "none",
   };
@@ -548,8 +624,10 @@ function getOutgoingCardStyle(outgoingStudyCard: OutgoingStudyCard) {
     backgroundImage: `linear-gradient(rgba(${tintColor} / 0.36), rgba(${tintColor} / 0.22)), var(--app-card-gradient)`,
     borderColor: `rgba(${tintColor} / 0.72)`,
     "--flashcard-exit-x": `${direction * 118}vw`,
+    "--flashcard-exit-y": `${outgoingStudyCard.startOffset.y - 160}px`,
     "--flashcard-exit-rotate": `${direction * 26}deg`,
-    "--flashcard-start-rotate": `${outgoingStudyCard.startOffset / 22}deg`,
-    "--flashcard-start-x": `${outgoingStudyCard.startOffset}px`,
+    "--flashcard-start-rotate": `${outgoingStudyCard.startOffset.x / 22}deg`,
+    "--flashcard-start-x": `${outgoingStudyCard.startOffset.x}px`,
+    "--flashcard-start-y": `${outgoingStudyCard.startOffset.y}px`,
   };
 }

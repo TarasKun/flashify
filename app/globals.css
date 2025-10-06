@@ -162,6 +162,8 @@ button {
 .flashcard-stage {
   isolation: isolate;
   padding-top: 0.75rem;
+  contain: layout;
+  overflow: visible;
 }
 
 .flashcard-shadow-card {
@@ -209,24 +211,24 @@ button {
 @keyframes flashcard-exit-right {
   from {
     opacity: 1;
-    transform: translate3d(var(--flashcard-start-x), 0, 0) rotate(var(--flashcard-start-rotate)) scale(1);
+    transform: translate3d(var(--flashcard-start-x), var(--flashcard-start-y), 0) rotate(var(--flashcard-start-rotate)) scale(1);
   }
 
   to {
     opacity: 0;
-    transform: translate3d(var(--flashcard-exit-x), -10rem, 0) rotate(var(--flashcard-exit-rotate)) scale(0.96);
+    transform: translate3d(var(--flashcard-exit-x), var(--flashcard-exit-y), 0) rotate(var(--flashcard-exit-rotate)) scale(0.96);
   }
 }
 
 @keyframes flashcard-exit-left {
   from {
     opacity: 1;
-    transform: translate3d(var(--flashcard-start-x), 0, 0) rotate(var(--flashcard-start-rotate)) scale(1);
+    transform: translate3d(var(--flashcard-start-x), var(--flashcard-start-y), 0) rotate(var(--flashcard-start-rotate)) scale(1);
   }
 
   to {
     opacity: 0;
-    transform: translate3d(var(--flashcard-exit-x), -10rem, 0) rotate(var(--flashcard-exit-rotate)) scale(0.96);
+    transform: translate3d(var(--flashcard-exit-x), var(--flashcard-exit-y), 0) rotate(var(--flashcard-exit-rotate)) scale(0.96);
   }
 }
 

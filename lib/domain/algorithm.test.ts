@@ -306,8 +306,8 @@ describe("learning algorithm", () => {
     expect(pool.map((card) => card.id)).toEqual([
       "overdue-resting",
       "due-review",
-      "new",
       "learning",
+      "new",
     ]);
   });
 
