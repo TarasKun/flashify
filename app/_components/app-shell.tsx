@@ -51,7 +51,7 @@ export function AppShell({ children }: AppShellProps) {
   const [newDeckName, setNewDeckName] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const backupInputRef = useRef<HTMLInputElement | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
+  const controlsRef = useRef<HTMLDivElement | null>(null);
 
   const loadDecks = useCallback(async () => {
     await seedDemoData(storage);
@@ -85,11 +85,13 @@ export function AppShell({ children }: AppShellProps) {
         return;
       }
 
-      if (
-        event.target instanceof Node &&
-        headerRef.current?.contains(event.target)
-      ) {
-        return;
+      if (event.target instanceof HTMLElement) {
+        if (
+          controlsRef.current?.contains(event.target) ||
+          event.target.closest("[data-app-control]")
+        ) {
+          return;
+        }
       }
 
       setIsDeckMenuOpen(false);
@@ -224,60 +226,79 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="app-screen h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
-      <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
+    <main className="app-screen relative h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
+      <div
+        className={`flex h-dvh w-full max-w-full flex-col overflow-hidden pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))] ${
+          isStudyRoute ? "px-7" : "px-4"
+        }`}
+      >
         <header
+          data-app-control
           className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
-          ref={headerRef}
+          ref={controlsRef}
         >
           {deckNavigation ? (
             <Link
               aria-label={deckNavigation.ariaLabel}
-              className={`flex h-12 items-center justify-center justify-self-start rounded-full border border-white/70 bg-white/80 text-sm font-black text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10 ${
-                deckNavigation.label ? "gap-1.5 px-3" : "w-12"
+              className={`flex h-11 items-center justify-center justify-self-start rounded-full text-sm font-black text-[var(--app-text-muted)] transition hover:text-[var(--app-text)] ${
+                deckNavigation.label && !isStudyRoute ? "gap-1.5 px-3" : "w-11"
               }`}
               href={deckNavigation.href}
             >
-              <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
-              {deckNavigation.label ? deckNavigation.label : null}
+              <ArrowLeft aria-hidden="true" size={isStudyRoute ? 26 : 18} strokeWidth={2.5} />
+              {deckNavigation.label && !isStudyRoute ? deckNavigation.label : null}
             </Link>
           ) : (
             <span aria-hidden="true" className="h-12 w-[5.5rem]" />
           )}
-          <button
-            aria-expanded={isDeckMenuOpen}
-            aria-label="Select deck"
-            className="mx-auto grid size-12 place-items-center rounded-full text-[var(--app-text-muted)]"
-            onClick={() => {
-              setIsAppMenuOpen(false);
-              setIsDeckMenuOpen((currentValue) => !currentValue);
-            }}
-            type="button"
-          >
-            <ChevronDown
-              aria-hidden="true"
-              className={`transition ${
-                isDeckMenuOpen ? "rotate-180" : ""
-              }`}
-              size={24}
-              strokeWidth={2.5}
-            />
-          </button>
-          <button
-            aria-expanded={isAppMenuOpen}
-            aria-label="Open menu"
-            className="grid size-12 place-items-center justify-self-end rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-            onClick={() => {
-              setIsDeckMenuOpen(false);
-              setIsAppMenuOpen((currentValue) => !currentValue);
-            }}
-            type="button"
-          >
-            <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
-          </button>
+          {isStudyRoute ? (
+            <span aria-hidden="true" />
+          ) : (
+            <button
+              aria-expanded={isDeckMenuOpen}
+              aria-label="Select deck"
+              className="mx-auto grid size-12 place-items-center rounded-full text-[var(--app-text-muted)]"
+              onClick={() => {
+                setIsAppMenuOpen(false);
+                setIsDeckMenuOpen((currentValue) => !currentValue);
+              }}
+              type="button"
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={`transition ${
+                  isDeckMenuOpen ? "rotate-180" : ""
+                }`}
+                size={24}
+                strokeWidth={2.5}
+              />
+            </button>
+          )}
+          {isStudyRoute ? (
+            <span aria-hidden="true" />
+          ) : (
+            <button
+              aria-expanded={isAppMenuOpen}
+              aria-label="Open menu"
+              className="grid size-12 place-items-center justify-self-end rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+              onClick={() => {
+                setIsDeckMenuOpen(false);
+                setIsAppMenuOpen((currentValue) => !currentValue);
+              }}
+              type="button"
+            >
+              <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
+            </button>
+          )}
 
           {isAppMenuOpen ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+            <div
+              className={`z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)] ${
+                isStudyRoute
+                  ? "fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-7 right-7"
+                  : "absolute left-0 right-0 top-[calc(100%+0.75rem)]"
+              }`}
+            >
               <input
                 ref={backupInputRef}
                 accept="application/json,.json"
@@ -328,7 +349,7 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           ) : null}
 
-          {isDeckMenuOpen ? (
+          {isDeckMenuOpen && !isStudyRoute ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
@@ -387,6 +408,21 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </div>
       </div>
+      {isStudyRoute ? (
+        <button
+          data-app-control
+          aria-expanded={isAppMenuOpen}
+          aria-label="Open menu"
+          className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+          onClick={() => {
+            setIsDeckMenuOpen(false);
+            setIsAppMenuOpen((currentValue) => !currentValue);
+          }}
+          type="button"
+        >
+          <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
+        </button>
+      ) : null}
     </main>
   );
 }
