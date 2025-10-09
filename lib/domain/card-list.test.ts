@@ -12,15 +12,14 @@ describe("deck card list helpers", () => {
   it("calculates visible learning progress from review level and direction streaks", () => {
     const card = makeCard({
       status: "learning",
-      reviewLevel: 1,
-      forwardStreak: 2,
-      reverseStreak: 1,
+      forwardStreak: 1,
+      reverseStreak: 0,
     });
 
     expect(getCardLearningProgress(card)).toMatchObject({
-      completed: 7,
-      total: 12,
-      percent: 58,
+      completed: 1,
+      total: 2,
+      percent: 50,
       isLearned: false,
       label: "Learning",
     });
@@ -35,8 +34,8 @@ describe("deck card list helpers", () => {
     });
 
     expect(getCardLearningProgress(card)).toMatchObject({
-      completed: 12,
-      total: 12,
+      completed: 2,
+      total: 2,
       percent: 100,
       isLearned: false,
       label: "Review",
@@ -50,8 +49,8 @@ describe("deck card list helpers", () => {
     });
 
     expect(getCardLearningProgress(card)).toMatchObject({
-      completed: 12,
-      total: 12,
+      completed: 2,
+      total: 2,
       percent: 100,
       isLearned: true,
       label: "Learned",

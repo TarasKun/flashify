@@ -161,7 +161,6 @@ button {
 
 .flashcard-stage {
   isolation: isolate;
-  padding-top: 0.75rem;
   contain: layout;
   overflow: visible;
 }

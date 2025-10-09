@@ -90,7 +90,6 @@ export function answerCard({
     direction,
     answer,
     now,
-    config,
   );
 
   const updatedCard: Card = {
@@ -208,7 +207,6 @@ function updateProgressForAnswer(
   direction: StudyDirection,
   answer: StudyAnswer,
   now: Date,
-  config: Pick<LearningConfig, "WRONG_STREAK_PENALTY">,
 ): CardProgress {
   const directionProgress = progress[direction];
   const nextDirectionProgress =
@@ -219,14 +217,17 @@ function updateProgressForAnswer(
           lastAnsweredAt: now.toISOString(),
         }
       : {
-          ...directionProgress,
-          correctStreak: Math.max(
-            0,
-            directionProgress.correctStreak - config.WRONG_STREAK_PENALTY,
-          ),
+          correctStreak: 0,
           mistakes: directionProgress.mistakes + 1,
           lastAnsweredAt: now.toISOString(),
         };
+
+  if (answer === "dontKnow") {
+    return {
+      ...createEmptyCardProgress(),
+      [direction]: nextDirectionProgress,
+    };
+  }
 
   return {
     ...progress,
@@ -256,6 +257,10 @@ function advanceCompletedCard(
 function getNextReviewLevel(reviewLevel: ReviewLevel): ReviewLevel {
   if (reviewLevel >= 4) {
     return 4;
+  }
+
+  if (reviewLevel < 3) {
+    return 3;
   }
 
   return (reviewLevel + 1) as ReviewLevel;

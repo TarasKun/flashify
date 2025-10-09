@@ -379,13 +379,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         </div>
       ) : currentStudyCard || outgoingStudyCard ? (
         <>
-          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1">
+          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 px-1 pt-5">
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-deep" />
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-near" />
             {currentStudyCard ? (
               <div
                 aria-label="Flashcard"
-                className="flashcard-perspective absolute inset-0 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
+                className="flashcard-perspective absolute inset-x-1 bottom-1 top-5 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-white/75 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
                 onPointerCancel={handlePointerCancel}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -407,7 +407,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {outgoingStudyCard ? (
               <div
                 aria-hidden="true"
-                className="flashcard-perspective pointer-events-none absolute inset-0 z-20 overflow-visible rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
+                className="flashcard-perspective pointer-events-none absolute inset-x-1 bottom-1 top-5 z-20 overflow-visible rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
                 style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
@@ -527,7 +527,7 @@ function FlashcardFace({
         isBack ? "flashcard-face-back" : ""
       }`}
     >
-      <span className="w-full whitespace-pre-wrap break-words text-center text-[2.35rem] font-black leading-[1.08] tracking-normal">
+      <span className="w-full whitespace-pre-wrap break-words text-center text-[1.175rem] font-black leading-[1.18] tracking-normal">
         {text}
       </span>
     </div>

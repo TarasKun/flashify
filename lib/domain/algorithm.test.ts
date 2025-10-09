@@ -48,7 +48,7 @@ describe("learning algorithm", () => {
     expect(updatedCard.progress.reverse.correctStreak).toBe(0);
   });
 
-  it("reduces the current direction streak on a wrong answer without going below zero", () => {
+  it("resets card progress on a wrong answer", () => {
     const card = makeCard({
       status: "learning",
       progress: {
@@ -58,7 +58,7 @@ describe("learning algorithm", () => {
           lastAnsweredAt: null,
         },
         reverse: {
-          correctStreak: 0,
+          correctStreak: 1,
           mistakes: 0,
           lastAnsweredAt: null,
         },
@@ -80,52 +80,39 @@ describe("learning algorithm", () => {
 
     expect(firstWrongAnswer.progress.forward.correctStreak).toBe(0);
     expect(firstWrongAnswer.progress.forward.mistakes).toBe(1);
+    expect(firstWrongAnswer.progress.reverse.correctStreak).toBe(0);
     expect(secondWrongAnswer.progress.forward.correctStreak).toBe(0);
     expect(secondWrongAnswer.progress.forward.mistakes).toBe(2);
   });
 
-  it("does not complete a card until both directions reach the required streak", () => {
+  it("flips direction after one correct answer without completing the card", () => {
     const card = makeCard({
       status: "learning",
-      progress: {
-        forward: {
-          correctStreak: 2,
-          mistakes: 0,
-          lastAnsweredAt: ISO_NOW,
-        },
-        reverse: {
-          correctStreak: 1,
-          mistakes: 0,
-          lastAnsweredAt: ISO_NOW,
-        },
-      },
     });
 
-    expect(isCardStageComplete(card)).toBe(false);
-    expect(getNextStudyDirection(card)).toBe("reverse");
-
-    const completedCard = answerCard({
+    const updatedCard = answerCard({
       card,
-      direction: "reverse",
+      direction: "forward",
       answer: "know",
       now: NOW,
     });
 
-    expect(completedCard.status).toBe("resting");
-    expect(completedCard.reviewLevel).toBe(1);
+    expect(isCardStageComplete(updatedCard)).toBe(false);
+    expect(getNextStudyDirection(updatedCard)).toBe("reverse");
+    expect(updatedCard.status).toBe("learning");
   });
 
-  it("moves a completed initial stage to the 3 hour rest stage", () => {
+  it("marks a card learned after one correct answer in each direction", () => {
     const card = makeCard({
       status: "learning",
       progress: {
         forward: {
-          correctStreak: 2,
+          correctStreak: 1,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },
         reverse: {
-          correctStreak: 1,
+          correctStreak: 0,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },
@@ -139,54 +126,24 @@ describe("learning algorithm", () => {
       now: NOW,
     });
 
-    expect(updatedCard.status).toBe("resting");
-    expect(updatedCard.reviewLevel).toBe(1);
-    expect(updatedCard.dueAt).toBe("2025-06-10T17:23:00.000Z");
+    expect(updatedCard.status).toBe("learned");
+    expect(updatedCard.reviewLevel).toBe(3);
+    expect(updatedCard.dueAt).toBe("2025-06-17T14:23:00.000Z");
     expect(updatedCard.progress).toEqual(createEmptyCardProgress());
   });
 
-  it("moves a completed second stage to the 12 hour rest stage", () => {
+  it("marks legacy resting progress learned after the next completed stage", () => {
     const card = makeCard({
       status: "learning",
       reviewLevel: 1,
       progress: {
         forward: {
-          correctStreak: 2,
-          mistakes: 0,
-          lastAnsweredAt: ISO_NOW,
-        },
-        reverse: {
           correctStreak: 1,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },
-      },
-    });
-
-    const updatedCard = answerCard({
-      card,
-      direction: "reverse",
-      answer: "know",
-      now: NOW,
-    });
-
-    expect(updatedCard.status).toBe("resting");
-    expect(updatedCard.reviewLevel).toBe(2);
-    expect(updatedCard.dueAt).toBe("2025-06-11T02:23:00.000Z");
-  });
-
-  it("marks a card learned and schedules the 7 day review after the third successful stage", () => {
-    const card = makeCard({
-      status: "learning",
-      reviewLevel: 2,
-      progress: {
-        forward: {
-          correctStreak: 2,
-          mistakes: 0,
-          lastAnsweredAt: ISO_NOW,
-        },
         reverse: {
-          correctStreak: 1,
+          correctStreak: 0,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },
@@ -211,12 +168,12 @@ describe("learning algorithm", () => {
       reviewLevel: 3,
       progress: {
         forward: {
-          correctStreak: 2,
+          correctStreak: 1,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },
         reverse: {
-          correctStreak: 1,
+          correctStreak: 0,
           mistakes: 0,
           lastAnsweredAt: ISO_NOW,
         },

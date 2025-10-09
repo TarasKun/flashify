@@ -33,16 +33,16 @@ export function sortCardsForDeckList(cards: Card[]): Card[] {
 export function getCardLearningProgress(card: Card): CardLearningProgress {
   const requiredStreak = LEARNING_CONFIG.REQUIRED_STREAK_PER_DIRECTION;
   const stageSize = requiredStreak * 2;
-  const total = stageSize * 3;
+  const total = stageSize;
   const currentStageProgress = Math.min(
     stageSize,
     Math.min(card.progress.forward.correctStreak, requiredStreak) +
       Math.min(card.progress.reverse.correctStreak, requiredStreak),
   );
   const isLearned = card.status === "learned";
-  const completed = isLearned
+  const completed = isLearned || card.status === "resting"
     ? total
-    : Math.min(total, card.reviewLevel * stageSize + currentStageProgress);
+    : currentStageProgress;
 
   return {
     completed,
