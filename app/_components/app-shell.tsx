@@ -274,30 +274,11 @@ export function AppShell({ children }: AppShellProps) {
               />
             </button>
           )}
-          {isStudyRoute ? (
-            <span aria-hidden="true" />
-          ) : (
-            <button
-              aria-expanded={isAppMenuOpen}
-              aria-label="Open menu"
-              className="grid size-12 place-items-center justify-self-end rounded-full border border-white/70 bg-white/80 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-              onClick={() => {
-                setIsDeckMenuOpen(false);
-                setIsAppMenuOpen((currentValue) => !currentValue);
-              }}
-              type="button"
-            >
-              <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
-            </button>
-          )}
+          <span aria-hidden="true" />
 
           {isAppMenuOpen ? (
             <div
-              className={`z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)] ${
-                isStudyRoute
-                  ? "fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-7 right-7"
-                  : "absolute left-0 right-0 top-[calc(100%+0.75rem)]"
-              }`}
+              className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-7 right-7 z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]"
             >
               <input
                 ref={backupInputRef}
@@ -408,21 +389,19 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </div>
       </div>
-      {isStudyRoute ? (
-        <button
-          data-app-control
-          aria-expanded={isAppMenuOpen}
-          aria-label="Open menu"
-          className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-          onClick={() => {
-            setIsDeckMenuOpen(false);
-            setIsAppMenuOpen((currentValue) => !currentValue);
-          }}
-          type="button"
-        >
-          <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
-        </button>
-      ) : null}
+      <button
+        data-app-control
+        aria-expanded={isAppMenuOpen}
+        aria-label="Open menu"
+        className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+        onClick={() => {
+          setIsDeckMenuOpen(false);
+          setIsAppMenuOpen((currentValue) => !currentValue);
+        }}
+        type="button"
+      >
+        <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
+      </button>
     </main>
   );
 }

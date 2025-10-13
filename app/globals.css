@@ -166,7 +166,7 @@ button {
 }
 
 .flashcard-shadow-card {
-  border: 1px solid rgb(255 255 255 / 70%);
+  border: 1px solid rgb(203 213 225 / 70%);
   border-radius: 2.25rem;
   bottom: 0.25rem;
   left: 0;
@@ -178,7 +178,6 @@ button {
 
 .flashcard-shadow-card-near {
   background: linear-gradient(145deg, rgb(255 255 255 / 88%), rgb(248 251 255 / 86%));
-  box-shadow: 0 20px 40px rgb(63 91 246 / 8%);
   left: -0.8rem;
   right: -0.8rem;
   transform: translateY(0.55rem) rotate(1.35deg) scale(0.985);
@@ -187,7 +186,6 @@ button {
 
 .flashcard-shadow-card-deep {
   background: linear-gradient(145deg, rgb(255 255 255 / 78%), rgb(246 250 255 / 76%));
-  box-shadow: 0 18px 34px rgb(17 24 39 / 6%);
   left: -1.35rem;
   right: -1.35rem;
   top: 0.55rem;

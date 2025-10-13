@@ -97,7 +97,7 @@ export function DeckListScreen() {
     <section className="flex h-full min-h-0 flex-col gap-5 pb-[12dvh]">
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="pt-1 text-center">
-          <h2 className="break-words text-2xl font-black tracking-normal">
+          <h2 className="break-words text-2xl font-normal tracking-normal">
             {isLoading
               ? "Loading"
               : activeDeckState?.deck.name ?? "No deck selected"}

@@ -385,7 +385,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {currentStudyCard ? (
               <div
                 aria-label="Flashcard"
-                className="flashcard-perspective absolute inset-x-0 bottom-1 top-5 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-white/85 bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)] dark:border-white/10"
+                className="flashcard-perspective absolute inset-x-0 bottom-1 top-5 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
                 onPointerCancel={handlePointerCancel}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -407,7 +407,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {outgoingStudyCard ? (
               <div
                 aria-hidden="true"
-                className="flashcard-perspective pointer-events-none absolute inset-x-0 bottom-1 top-5 z-20 overflow-visible rounded-[2.25rem] border bg-[image:var(--app-card-gradient)] text-center shadow-[var(--app-shadow)]"
+                className="flashcard-perspective pointer-events-none absolute inset-x-0 bottom-1 top-5 z-20 overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
                 style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
@@ -527,7 +527,7 @@ function FlashcardFace({
         isBack ? "flashcard-face-back" : ""
       }`}
     >
-      <span className="w-full whitespace-pre-wrap break-words text-center text-[2.45rem] font-semibold leading-[1.12] tracking-normal text-[var(--app-text)]">
+      <span className="w-full whitespace-pre-wrap break-words text-center text-[1.7rem] font-semibold leading-[1.14] tracking-normal text-[var(--app-text)]">
         {text}
       </span>
     </div>
