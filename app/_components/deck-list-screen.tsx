@@ -24,10 +24,8 @@ export function DeckListScreen() {
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [activeDeckState, setActiveDeckState] =
     useState<ActiveDeckState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const loadDecks = useCallback(async () => {
-    setIsLoading(true);
     await seedDemoData(storage);
 
     const decks = await storage.listDecks();
@@ -37,7 +35,6 @@ export function DeckListScreen() {
 
     if (!activeDeck) {
       setActiveDeckState(null);
-      setIsLoading(false);
       return;
     }
 
@@ -60,7 +57,6 @@ export function DeckListScreen() {
       progress,
       dueCount: dueCards.length,
     });
-    setIsLoading(false);
   }, [storage]);
 
   useEffect(() => {
@@ -96,14 +92,6 @@ export function DeckListScreen() {
   return (
     <section className="flex h-full min-h-0 flex-col gap-5 pb-[12dvh]">
       <section className="flex min-h-0 flex-1 flex-col">
-        <div className="pt-1 text-center">
-          <h2 className="break-words text-2xl font-normal tracking-normal">
-            {isLoading
-              ? "Loading"
-              : activeDeckState?.deck.name ?? "No deck selected"}
-          </h2>
-        </div>
-
         <div className="mt-auto grid grid-cols-3 overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)]">
           <Metric label="To learn" tone="primary" value={activeCardsCount} />
           <Metric

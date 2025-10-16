@@ -78,6 +78,8 @@ export function AppShell({ children }: AppShellProps) {
 
   const deckNavigation = getDeckNavigation(pathname);
   const isStudyRoute = /^\/decks\/[^/]+\/study$/.test(pathname);
+  const isHomeRoute = pathname === "/";
+  const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -257,19 +259,22 @@ export function AppShell({ children }: AppShellProps) {
             <button
               aria-expanded={isDeckMenuOpen}
               aria-label="Select deck"
-              className="mx-auto grid size-12 place-items-center rounded-full text-[var(--app-text-muted)]"
+              className="mx-auto flex h-12 max-w-full min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-[var(--app-text)]"
               onClick={() => {
                 setIsAppMenuOpen(false);
                 setIsDeckMenuOpen((currentValue) => !currentValue);
               }}
               type="button"
             >
+              <span className="min-w-0 truncate text-sm font-normal">
+                {activeDeck?.name ?? "Deck"}
+              </span>
               <ChevronDown
                 aria-hidden="true"
-                className={`transition ${
+                className={`shrink-0 transition ${
                   isDeckMenuOpen ? "rotate-180" : ""
                 }`}
-                size={24}
+                size={18}
                 strokeWidth={2.5}
               />
             </button>
@@ -402,6 +407,15 @@ export function AppShell({ children }: AppShellProps) {
       >
         <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
       </button>
+      {isHomeRoute && activeDeck ? (
+        <Link
+          aria-label={`Open ${activeDeck.name} deck`}
+          className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+          href={`/decks/${activeDeck.id}`}
+        >
+          <Plus aria-hidden="true" size={24} strokeWidth={2.5} />
+        </Link>
+      ) : null}
     </main>
   );
 }
