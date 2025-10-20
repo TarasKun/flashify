@@ -229,14 +229,10 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <main className="app-screen relative h-dvh w-full max-w-full overflow-hidden text-[var(--app-text)]">
-      <div
-        className={`flex h-dvh w-full max-w-full flex-col overflow-hidden pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))] ${
-          isStudyRoute ? "px-7" : "px-4"
-        }`}
-      >
+      <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <header
           data-app-control
-          className="relative grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
+          className="relative z-20 grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
           ref={controlsRef}
         >
           {deckNavigation ? (
@@ -387,9 +383,11 @@ export function AppShell({ children }: AppShellProps) {
         </header>
 
         <div
-          className={`mt-6 min-h-0 flex-1 overflow-x-hidden ${
-            isStudyRoute ? "overflow-y-visible" : "overflow-y-auto"
-          }`}
+          className={
+            isStudyRoute
+              ? "fixed inset-0 z-0 overflow-visible px-7 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(5.25rem+env(safe-area-inset-top))]"
+              : "mt-6 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          }
         >
           {children}
         </div>

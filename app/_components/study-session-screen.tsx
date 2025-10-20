@@ -372,20 +372,20 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   });
 
   return (
-    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-visible pb-16 sm:pb-0">
+    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-visible pb-20 sm:pb-0">
       {isLoading ? (
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
         </div>
       ) : currentStudyCard || outgoingStudyCard ? (
         <>
-          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 pt-5">
+          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 pt-1">
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-deep" />
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-near" />
             {currentStudyCard ? (
               <div
                 aria-label="Flashcard"
-                className="flashcard-perspective absolute inset-x-0 bottom-1 top-5 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
+                className="flashcard-perspective absolute inset-x-0 bottom-3 top-1 z-10 touch-none select-none overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
                 onPointerCancel={handlePointerCancel}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -407,7 +407,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             {outgoingStudyCard ? (
               <div
                 aria-hidden="true"
-                className="flashcard-perspective pointer-events-none absolute inset-x-0 bottom-1 top-5 z-20 overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
+                className="flashcard-perspective pointer-events-none absolute inset-x-0 bottom-3 top-1 z-20 overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
                 style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
