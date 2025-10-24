@@ -370,9 +370,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     tintColor,
     tintIntensity,
   });
+  const nextStudyCard = currentStudyCard ? cards[1] ?? null : cards[0] ?? null;
 
   return (
-    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-visible pb-20 sm:pb-0">
+    <section className="relative flex h-full min-h-0 max-w-full flex-col gap-4 overflow-visible sm:pb-0">
       {isLoading ? (
         <div className="grid min-h-0 flex-1 place-items-center rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-6 text-sm font-bold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
           Loading study cards
@@ -381,7 +382,18 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         <>
           <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 pt-1">
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-deep" />
-            <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-near" />
+            {nextStudyCard ? (
+              <div
+                aria-hidden="true"
+                className="flashcard-perspective flashcard-next-card pointer-events-none absolute inset-x-0 bottom-3 top-1 z-[5] overflow-visible rounded-[2.25rem] border border-slate-200/75 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
+              >
+                <div className="flashcard-inner relative h-full min-h-0">
+                  <FlashcardFace text={getPromptText(nextStudyCard)} />
+                </div>
+              </div>
+            ) : (
+              <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-near" />
+            )}
             {currentStudyCard ? (
               <div
                 aria-label="Flashcard"
@@ -464,7 +476,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       {isAddingCard ? (
         <form
-          className="absolute inset-x-0 bottom-16 z-20 grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)] sm:bottom-20"
+          className="fixed inset-x-7 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]"
           onSubmit={createCard}
         >
           <textarea
@@ -504,7 +516,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       <button
         aria-label="Add card"
-        className="absolute bottom-0 right-0 z-10 grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10 sm:bottom-20 sm:bg-[var(--app-primary)] sm:text-[var(--app-primary-contrast)]"
+        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
         onClick={() => setIsAddingCard((currentValue) => !currentValue)}
         type="button"
       >

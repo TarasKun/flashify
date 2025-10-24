@@ -193,6 +193,11 @@ button {
   z-index: 1;
 }
 
+.flashcard-next-card {
+  opacity: 0.98;
+  transform: translateY(0.65rem) scale(0.982);
+}
+
 .flashcard-inner {
   transform-style: preserve-3d;
   transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
