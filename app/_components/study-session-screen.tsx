@@ -386,6 +386,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <div
                 aria-hidden="true"
                 className="flashcard-perspective flashcard-next-card pointer-events-none absolute inset-x-0 bottom-3 top-1 z-[5] overflow-visible rounded-[2.25rem] border border-slate-200/75 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
+                key={`next-${nextStudyCard.card.id}-${nextStudyCard.direction}`}
               >
                 <div className="flashcard-inner relative h-full min-h-0">
                   <FlashcardFace text={getPromptText(nextStudyCard)} />
@@ -402,6 +403,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
+                key={`current-${currentStudyCard.card.id}-${currentStudyCard.direction}`}
                 role="button"
                 style={currentCardStyle}
                 tabIndex={0}
@@ -420,6 +422,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
               <div
                 aria-hidden="true"
                 className="flashcard-perspective pointer-events-none absolute inset-x-0 bottom-3 top-1 z-20 overflow-visible rounded-[2.25rem] border border-slate-200/80 bg-[image:var(--app-card-gradient)] text-center dark:border-white/15"
+                key={`outgoing-${outgoingStudyCard.studyCard.card.id}-${outgoingStudyCard.studyCard.direction}`}
                 style={getOutgoingCardStyle(outgoingStudyCard)}
               >
                 <div
