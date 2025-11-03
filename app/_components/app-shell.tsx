@@ -87,7 +87,7 @@ export function AppShell({ children }: AppShellProps) {
         return;
       }
 
-      if (event.target instanceof HTMLElement) {
+      if (event.target instanceof Element) {
         if (
           controlsRef.current?.contains(event.target) ||
           event.target.closest("[data-app-control]")
@@ -232,7 +232,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex h-dvh w-full max-w-full flex-col overflow-hidden px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <header
           data-app-control
-          className="relative z-20 grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
+          className="relative z-[100] grid h-16 grid-cols-[5.5rem_1fr_3.5rem] items-center gap-3"
           ref={controlsRef}
         >
           {deckNavigation ? (
@@ -279,7 +279,8 @@ export function AppShell({ children }: AppShellProps) {
 
           {isAppMenuOpen ? (
             <div
-              className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-7 right-7 z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]"
+              data-app-control
+              className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-7 right-7 z-[2147483647] grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]"
             >
               <input
                 ref={backupInputRef}
@@ -332,7 +333,10 @@ export function AppShell({ children }: AppShellProps) {
           ) : null}
 
           {isDeckMenuOpen && !isStudyRoute ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]">
+            <div
+              data-app-control
+              className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-[120] grid gap-3 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow)]"
+            >
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
                   className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-xs font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
@@ -396,7 +400,7 @@ export function AppShell({ children }: AppShellProps) {
         data-app-control
         aria-expanded={isAppMenuOpen}
         aria-label="Open menu"
-        className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+        className="absolute bottom-[calc(2.25rem+env(safe-area-inset-bottom))] left-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
         onClick={() => {
           setIsDeckMenuOpen(false);
           setIsAppMenuOpen((currentValue) => !currentValue);
@@ -408,7 +412,7 @@ export function AppShell({ children }: AppShellProps) {
       {isHomeRoute && activeDeck ? (
         <Link
           aria-label={`Open ${activeDeck.name} deck`}
-          className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+          className="absolute bottom-[calc(2.25rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
           href={`/decks/${activeDeck.id}`}
         >
           <Plus aria-hidden="true" size={24} strokeWidth={2.5} />

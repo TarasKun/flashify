@@ -479,7 +479,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       {isAddingCard ? (
         <form
-          className="fixed inset-x-7 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]"
+          className="fixed inset-x-7 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow)]"
           onSubmit={createCard}
         >
           <textarea
@@ -519,7 +519,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       <button
         aria-label="Add card"
-        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-7 z-30 grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+        className="fixed bottom-[calc(2.25rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
         onClick={() => setIsAddingCard((currentValue) => !currentValue)}
         type="button"
       >
