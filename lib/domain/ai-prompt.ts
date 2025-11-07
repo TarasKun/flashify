@@ -27,5 +27,11 @@ Rules:
 - Escape any double quotes inside string values with a backslash.
 - Example of a valid escaped string: "Example: [\\"HTML\\", \\"CSS\\", \\"JavaScript\\"] is an array."
 - Preserve the original meaning.
-- Keep questions and answers relevant to the deck/topic.`;
+- Keep questions and answers relevant to the deck/topic.
+- Make every card useful for bidirectional study whenever possible: either side should be a reasonable prompt for the other side.
+- Prefer precise term/concept <-> clear definition/translation/example pairs.
+- Avoid vague prompts like "What is important here?", "Explain this concept", or questions with many valid answers.
+- If the source describes a concept, put the exact concept name or term on one side and a specific, unambiguous definition on the other side.
+- Keep answers deterministic: the user should know exactly what answer is expected, not guess from an abstract clue.
+- Do not create cards where reversing question and answer would feel confusing unless the source only supports one direction.`;
 }

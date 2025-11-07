@@ -255,14 +255,14 @@ export function AppShell({ children }: AppShellProps) {
             <button
               aria-expanded={isDeckMenuOpen}
               aria-label="Select deck"
-              className="mx-auto flex h-12 max-w-full min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-[var(--app-text)]"
+              className="mx-auto flex min-h-12 max-w-full min-w-0 items-center justify-center gap-1 rounded-full px-2 text-[var(--app-text)]"
               onClick={() => {
                 setIsAppMenuOpen(false);
                 setIsDeckMenuOpen((currentValue) => !currentValue);
               }}
               type="button"
             >
-              <span className="min-w-0 truncate text-sm font-normal">
+              <span className="max-w-[10.5rem] whitespace-normal text-center text-base font-normal leading-[1.05]">
                 {activeDeck?.name ?? "Deck"}
               </span>
               <ChevronDown
@@ -270,7 +270,7 @@ export function AppShell({ children }: AppShellProps) {
                 className={`shrink-0 transition ${
                   isDeckMenuOpen ? "rotate-180" : ""
                 }`}
-                size={18}
+                size={15}
                 strokeWidth={2.5}
               />
             </button>
@@ -389,7 +389,7 @@ export function AppShell({ children }: AppShellProps) {
         <div
           className={
             isStudyRoute
-              ? "fixed inset-0 z-0 overflow-visible px-7 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(5.25rem+env(safe-area-inset-top))]"
+              ? "fixed inset-0 z-0 overflow-visible px-7 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(4.75rem+env(safe-area-inset-top))]"
               : "mt-6 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
           }
         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus, X } from "lucide-react";
+import { Check, Plus, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -49,6 +49,7 @@ type DragOffset = {
 const SWIPE_THRESHOLD = 84;
 const TAP_THRESHOLD = 8;
 const ANSWER_ANIMATION_MS = 760;
+const DEPRIORITIZE_REST_HOURS = 24;
 const EMPTY_DRAG_OFFSET: DragOffset = {
   x: 0,
   y: 0,
@@ -327,6 +328,35 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     answerWithAnimation(answer);
   }
 
+  async function deprioritizeCurrentCard() {
+    if (!currentStudyCard || isSubmitting) {
+      return;
+    }
+
+    const cardId = currentStudyCard.card.id;
+    const now = new Date();
+    const dueAt = new Date(
+      now.getTime() + DEPRIORITIZE_REST_HOURS * 60 * 60 * 1000,
+    ).toISOString();
+
+    setIsSubmitting(true);
+    setIsAnswerVisible(false);
+    setDragOffset(EMPTY_DRAG_OFFSET);
+    setCards((currentCards) =>
+      currentCards.filter((studyCard) => studyCard.card.id !== cardId),
+    );
+
+    try {
+      await storage.updateCard(cardId, {
+        status: "resting",
+        dueAt,
+      });
+      await refillSessionQueue();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function createCard(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -380,7 +410,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
         </div>
       ) : currentStudyCard || outgoingStudyCard ? (
         <>
-          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 pt-1">
+          <div className="flashcard-stage relative min-h-0 w-full max-w-full flex-1 pt-0">
             <div aria-hidden="true" className="flashcard-shadow-card flashcard-shadow-card-deep" />
             {nextStudyCard ? (
               <div
@@ -415,6 +445,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
                   <FlashcardFace text={getPromptText(currentStudyCard)} />
                   <FlashcardFace isBack text={getAnswerText(currentStudyCard)} />
                 </div>
+                <StudyCardFeedbackControls
+                  isDisabled={isSubmitting}
+                  onThumbsDown={deprioritizeCurrentCard}
+                />
               </div>
             ) : null}
 
@@ -545,6 +579,46 @@ function FlashcardFace({
       <span className="w-full whitespace-pre-wrap break-words text-center text-[1.7rem] font-semibold leading-[1.14] tracking-normal text-[var(--app-text)]">
         {text}
       </span>
+    </div>
+  );
+}
+
+function StudyCardFeedbackControls({
+  isDisabled,
+  onThumbsDown,
+}: {
+  isDisabled: boolean;
+  onThumbsDown: () => void;
+}) {
+  return (
+    <div className="pointer-events-auto absolute inset-x-0 bottom-7 z-20 flex items-center justify-center gap-6">
+      <button
+        aria-label="Lower card priority"
+        className="grid size-11 place-items-center rounded-full text-slate-400/75 transition hover:text-slate-500 disabled:opacity-35 dark:text-slate-300/55"
+        disabled={isDisabled}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onThumbsDown();
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+        type="button"
+      >
+        <ThumbsDown aria-hidden="true" size={22} strokeWidth={2.2} />
+      </button>
+      <button
+        aria-label="Thumbs up"
+        className="grid size-11 place-items-center rounded-full text-slate-400/60 dark:text-slate-300/45"
+        disabled
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+        type="button"
+      >
+        <ThumbsUp aria-hidden="true" size={22} strokeWidth={2.2} />
+      </button>
     </div>
   );
 }
