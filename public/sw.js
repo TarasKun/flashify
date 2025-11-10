@@ -1,6 +1,12 @@
-const CACHE_VERSION = "flashify-shell-v3";
+const CACHE_VERSION = "flashify-shell-v4";
 const APP_SHELL_URL = "/";
-const SHELL_ASSETS = ["/", "/icons/icon.svg", "/icons/maskable-icon.svg"];
+const SHELL_ASSETS = [
+  "/",
+  "/icons/flashify-icon-192.png",
+  "/icons/flashify-icon-512.png",
+  "/icons/flashify-icon-1024.png",
+  "/icons/apple-touch-icon.png",
+];
 const CACHEABLE_DESTINATIONS = new Set([
   "font",
   "image",
