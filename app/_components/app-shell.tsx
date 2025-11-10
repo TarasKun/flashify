@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ChevronDown,
   Download,
-  Menu,
   Plus,
   Settings,
   Upload,
@@ -399,20 +398,20 @@ export function AppShell({ children }: AppShellProps) {
       <button
         data-app-control
         aria-expanded={isAppMenuOpen}
-        aria-label="Open menu"
-        className="absolute bottom-[calc(2.25rem+env(safe-area-inset-bottom))] left-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+        aria-label="Open settings menu"
+        className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
         onClick={() => {
           setIsDeckMenuOpen(false);
           setIsAppMenuOpen((currentValue) => !currentValue);
         }}
         type="button"
       >
-        <Menu aria-hidden="true" size={22} strokeWidth={2.3} />
+        <Settings aria-hidden="true" size={22} strokeWidth={2.3} />
       </button>
       {isHomeRoute && activeDeck ? (
         <Link
           aria-label={`Open ${activeDeck.name} deck`}
-          className="absolute bottom-[calc(2.25rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+          className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/86 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
           href={`/decks/${activeDeck.id}`}
         >
           <Plus aria-hidden="true" size={24} strokeWidth={2.5} />

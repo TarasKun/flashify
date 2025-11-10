@@ -553,7 +553,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
       <button
         aria-label="Add card"
-        className="fixed bottom-[calc(2.25rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
+        className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
         onClick={() => setIsAddingCard((currentValue) => !currentValue)}
         type="button"
       >

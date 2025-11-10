@@ -330,7 +330,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   if (isLoading) {
     return (
-      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 shadow-[var(--app-shadow-soft)]">
+      <section className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         <p className="text-sm font-medium text-[var(--app-text-muted)]">
           Loading deck
         </p>
@@ -340,7 +340,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   if (!deck) {
     return (
-      <section className="grid gap-4 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 shadow-[var(--app-shadow-soft)]">
+      <section className="grid gap-4 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         <p className="font-black">Deck not found</p>
         <Link
           className="flex h-12 items-center justify-center rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)]"
@@ -356,7 +356,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
   return (
     <section className="grid min-w-0 max-w-full gap-5 overflow-x-hidden">
-      <section className="min-w-0 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-panel-gradient)] p-5 shadow-[var(--app-shadow)]">
+      <section className="min-w-0 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         {isEditing ? (
           <form className="grid gap-3" onSubmit={renameDeck}>
             <input
@@ -394,7 +394,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               <div className="flex shrink-0 gap-2">
                 <button
                   aria-label="Rename deck"
-                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-text-muted)] shadow-sm dark:bg-white/10"
+                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-text-muted)] dark:bg-white/10"
                   onClick={() => setIsEditing(true)}
                   title="Rename deck"
                   type="button"
@@ -403,7 +403,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 </button>
                 <button
                   aria-label="Delete deck"
-                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-danger)] shadow-sm dark:bg-white/10"
+                  className="grid size-11 place-items-center rounded-full border border-[var(--app-border)] bg-white/70 text-[var(--app-danger)] dark:bg-white/10"
                   onClick={deleteDeck}
                   title="Delete deck"
                   type="button"
@@ -430,7 +430,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             </div>
 
             <Link
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black text-[var(--app-primary-contrast)] shadow-[var(--app-shadow-soft)]"
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-5 text-base font-black text-[var(--app-primary-contrast)]"
               href={`/decks/${deck.id}/study`}
             >
               <Play aria-hidden="true" size={19} strokeWidth={2.4} />
@@ -442,7 +442,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       <section className="grid min-w-0 grid-cols-2 gap-3">
         <button
-          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-black"
           onClick={() => setIsAddingCard((currentValue) => !currentValue)}
           type="button"
         >
@@ -455,7 +455,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <span>Add card</span>
         </button>
         <button
-          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 text-left font-black shadow-[var(--app-shadow-soft)]"
+          className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-black"
           onClick={() => setIsImportingText((currentValue) => !currentValue)}
           type="button"
         >
@@ -471,7 +471,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isAddingCard ? (
         <form
-          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
           onSubmit={createCard}
         >
           <div>
@@ -528,7 +528,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
       {isImportingText ? (
         <form
-          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+          className="grid gap-3 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
           onSubmit={previewImportCards}
         >
           <div>
@@ -583,7 +583,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               <button
                 className={`flex h-12 items-center justify-center gap-2 rounded-full px-4 font-black text-[var(--app-primary-contrast)] transition ${
                   importPreviewMessage
-                    ? "bg-[var(--app-success)] shadow-[0_0_0_4px_var(--app-success-soft)]"
+                    ? "bg-[var(--app-success)]"
                     : "bg-[var(--app-primary)]"
                 } disabled:opacity-70`}
                 disabled={isImportingCards || !importText.trim()}
@@ -624,7 +624,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
               <div className="grid gap-3">
                 {importPreviewCards.map((card, index) => (
                   <article
-                    className="grid gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-white/65 p-3 shadow-sm dark:bg-white/10"
+                    className="grid gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-white/65 p-3 dark:bg-white/10"
                     key={card.id}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -706,7 +706,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-5 text-sm font-semibold text-[var(--app-text-muted)] shadow-[var(--app-shadow-soft)]">
+          <div className="rounded-[var(--app-radius-md)] border border-dashed border-[var(--app-border)] bg-[var(--app-surface)] p-5 text-sm font-semibold text-[var(--app-text-muted)]">
             No cards yet.
           </div>
         ) : (
@@ -716,7 +716,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
               return (
                 <article
-                  className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[image:var(--app-card-gradient)] p-4 shadow-[var(--app-shadow-soft)]"
+                  className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
                   key={card.id}
                 >
                   {editingCardId === card.id ? (
