@@ -195,7 +195,6 @@ button {
 
 .flashcard-next-card {
   opacity: 0.98;
-  transform: translateY(0.65rem) scale(0.982);
 }
 
 .flashcard-inner {
