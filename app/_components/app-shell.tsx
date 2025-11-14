@@ -25,7 +25,6 @@ import {
   exportFlashifyData,
   parseFlashifyBackupJson,
   restoreFlashifyData,
-  seedDemoData,
 } from "@/lib/storage";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -53,7 +52,6 @@ export function AppShell({ children }: AppShellProps) {
   const controlsRef = useRef<HTMLDivElement | null>(null);
 
   const loadDecks = useCallback(async () => {
-    await seedDemoData(storage);
     const nextDecks = await storage.listDecks();
     const savedDeckId = window.localStorage.getItem(ACTIVE_DECK_STORAGE_KEY);
     const nextActiveDeck =

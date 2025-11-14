@@ -166,7 +166,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const answerWithAnimation = useCallback(
     (answer: StudyAnswer, startOffset: DragOffset = EMPTY_DRAG_OFFSET) => {
       if (!currentStudyCard || isSubmitting || outgoingStudyCard) {
-        return;
+        return false;
       }
 
       const answeredStudyCard = currentStudyCard;
@@ -192,6 +192,8 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       }, ANSWER_ANIMATION_MS);
 
       void submitAnswer(answeredStudyCard, answer);
+
+      return true;
     },
     [
       currentStudyCard,
@@ -278,8 +280,12 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     const wasTap = !hasDraggedRef.current && Math.hypot(offset.x, offset.y) <= TAP_THRESHOLD;
 
     if (Math.abs(offset.x) >= SWIPE_THRESHOLD) {
-      finishDragGesture(event, { resetOffset: false });
-      answerWithAnimation(offset.x > 0 ? "know" : "dontKnow", offset);
+      const didAnswer = answerWithAnimation(
+        offset.x > 0 ? "know" : "dontKnow",
+        offset,
+      );
+
+      finishDragGesture(event, { resetOffset: !didAnswer });
       return;
     }
 
@@ -294,8 +300,12 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     const offset = dragLastOffsetRef.current;
 
     if (Math.abs(offset.x) >= SWIPE_THRESHOLD) {
-      finishDragGesture(event, { resetOffset: false });
-      answerWithAnimation(offset.x > 0 ? "know" : "dontKnow", offset);
+      const didAnswer = answerWithAnimation(
+        offset.x > 0 ? "know" : "dontKnow",
+        offset,
+      );
+
+      finishDragGesture(event, { resetOffset: !didAnswer });
       return;
     }
 
