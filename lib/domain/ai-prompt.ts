@@ -13,14 +13,15 @@ Accepted format:
   {
     "question": "word, phrase, or question to study",
     "answer": "translation or answer",
-    "explanation": "short explanation or example sentence, optional"
+    "explanation": "short extra context, example, or nuance that complements the answer"
   }
 ]
 \`\`\`
 
 Rules:
 - question and answer are required strings.
-- explanation is optional. Omit it if there is no useful explanation.
+- explanation is required for every card. Keep it to 1-3 short sentences.
+- explanation must add useful context, an example, or a nuance. Do not simply repeat the answer.
 - Do not add extra fields.
 - Wrap the JSON in exactly one \`\`\`json code block.
 - The content inside the code block must be valid JSON.

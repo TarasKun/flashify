@@ -11,7 +11,7 @@ type ParseCardsRequest = {
 type ParsedCard = {
   question: string;
   answer: string;
-  explanation: "";
+  explanation: string;
 };
 
 type ParseCardsResponse = {
@@ -30,7 +30,7 @@ const PARSE_CARDS_SCHEMA = {
           properties: {
             question: { type: "string" },
             answer: { type: "string" },
-            explanation: { type: "string", enum: [""] },
+            explanation: { type: "string" },
           },
           required: ["question", "answer", "explanation"],
           additionalProperties: false,
@@ -53,12 +53,12 @@ export async function POST(request: Request) {
 
     const parsed = await requestJsonCompletion<ParseCardsResponse>({
       jsonSchema: PARSE_CARDS_SCHEMA,
-      maxTokens: 1200,
+      maxTokens: 1800,
       messages: [
         {
           role: "system",
           content:
-            "You parse supplied study notes into flashcards. Parse only the provided text. Do not invent unrelated cards. Keep each full answer in the answer field. Always set explanation to an empty string.",
+            "You parse supplied study notes into flashcards. Parse only the provided text. Do not invent unrelated cards. Keep each full answer in the answer field. Add a 1-3 sentence explanation for every card that complements the answer with useful context, an example, or a nuance without simply repeating the answer.",
         },
         {
           role: "user",
@@ -80,7 +80,7 @@ function sanitizeParsedCards(cards: ParsedCard[]): ParsedCard[] {
     .map((card) => ({
       question: card.question.trim(),
       answer: card.answer.trim(),
-      explanation: "" as const,
+      explanation: card.explanation.trim(),
     }))
     .filter((card) => card.question && card.answer);
 }

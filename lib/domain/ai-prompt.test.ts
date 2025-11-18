@@ -14,5 +14,9 @@ describe("AI import prompt", () => {
     expect(prompt).toContain(
       'Example: [\\"HTML\\", \\"CSS\\", \\"JavaScript\\"] is an array.',
     );
+    expect(prompt).toContain("explanation is required for every card");
+    expect(prompt).toContain(
+      "explanation must add useful context, an example, or a nuance",
+    );
   });
 });

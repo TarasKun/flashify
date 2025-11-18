@@ -610,6 +610,17 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                 Cancel
               </button>
             </div>
+            {importPreviewCards.length > 0 ? (
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white disabled:opacity-50"
+                disabled={isImportingCards}
+                onClick={saveImportPreview}
+                type="button"
+              >
+                <Check aria-hidden="true" size={18} strokeWidth={2.3} />
+                Save preview
+              </button>
+            ) : null}
           </div>
 
           {importPreviewCards.length > 0 ? (
