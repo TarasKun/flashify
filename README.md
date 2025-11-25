@@ -156,5 +156,5 @@ The product goal is not to be a heavy learning management system. Flashify is me
 
 Additional planning and deployment notes:
 
-- [MVP_SPEC.md](./MVP_SPEC.md)
-- [DEPLOY.md](./DEPLOY.md)
+- [MVP_SPEC.md](./docs/MVP_SPEC.md)
+- [DEPLOY.md](./docs/DEPLOY.md)
