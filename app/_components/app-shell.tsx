@@ -19,7 +19,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { Deck } from "@/lib/domain";
+import { validateDeckName, type Deck } from "@/lib/domain";
 import {
   createIndexedDbStorage,
   exportFlashifyData,
@@ -47,6 +47,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isExportingData, setIsExportingData] = useState(false);
   const [isImportingData, setIsImportingData] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
+  const [deckError, setDeckError] = useState("");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const backupInputRef = useRef<HTMLInputElement | null>(null);
   const controlsRef = useRef<HTMLDivElement | null>(null);
@@ -130,11 +131,14 @@ export function AppShell({ children }: AppShellProps) {
     event.preventDefault();
 
     const name = newDeckName.trim();
+    const validation = validateDeckName(name);
 
-    if (!name) {
+    if (!validation.isValid) {
+      setDeckError(validation.message);
       return;
     }
 
+    setDeckError("");
     const deck = await storage.createDeck({ name });
 
     setNewDeckName("");
@@ -337,7 +341,10 @@ export function AppShell({ children }: AppShellProps) {
               <form className="flex gap-2" onSubmit={createDeck}>
                 <input
                   className="h-11 min-w-0 flex-1 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-xs font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-                  onChange={(event) => setNewDeckName(event.target.value)}
+                  onChange={(event) => {
+                    setNewDeckName(event.target.value);
+                    setDeckError("");
+                  }}
                   placeholder="New deck"
                   value={newDeckName}
                 />
@@ -350,6 +357,14 @@ export function AppShell({ children }: AppShellProps) {
                   <Plus aria-hidden="true" size={19} strokeWidth={2.5} />
                 </button>
               </form>
+              {deckError ? (
+                <p
+                  className="text-xs font-semibold text-[var(--app-danger)]"
+                  role="alert"
+                >
+                  {deckError}
+                </p>
+              ) : null}
 
               <nav className="grid max-h-72 gap-1 overflow-y-auto">
                 {decks.map((deck) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { Check, Plus, Settings, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -18,9 +18,18 @@ import {
   isEligibleForStudy,
   LEARNING_CONFIG,
   selectActivePool,
+  validateCardContent,
+  validateChatMessage,
   type Card,
+  type ChatMessage,
   type StudyDirection,
 } from "@/lib/domain";
+import {
+  createPlaceholderAssistantProvider,
+  retryAssistantReply,
+  sendAssistantMessage,
+} from "@/lib/assistant";
+import { StudyAssistantSheet } from "./study-assistant-sheet";
 import { createIndexedDbStorage } from "@/lib/storage";
 
 type StudySessionScreenProps = {
@@ -58,6 +67,7 @@ const EMPTY_DRAG_OFFSET: DragOffset = {
 export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [cards, setCards] = useState<StudyCard[]>([]);
+  const [deckName, setDeckName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
@@ -65,6 +75,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [newCardError, setNewCardError] = useState("");
+  const [isEditingCurrentCard, setIsEditingCurrentCard] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState("");
+  const [editingAnswer, setEditingAnswer] = useState("");
+  const [editingExplanation, setEditingExplanation] = useState("");
+  const [editingCardError, setEditingCardError] = useState("");
+  const [isSavingCardEdit, setIsSavingCardEdit] = useState(false);
   const [outgoingStudyCard, setOutgoingStudyCard] =
     useState<OutgoingStudyCard | null>(null);
   const [visibleExplanationCardId, setVisibleExplanationCardId] = useState<
@@ -72,18 +89,25 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   >(null);
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
   const [explanationError, setExplanationError] = useState("");
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState<ChatMessage[]>([]);
+  const [isAssistantSending, setIsAssistantSending] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
+  const [retryableUserMessage, setRetryableUserMessage] =
+    useState<ChatMessage | null>(null);
   const dragStartRef = useRef<DragOffset | null>(null);
   const dragLastOffsetRef = useRef<DragOffset>(EMPTY_DRAG_OFFSET);
   const hasDraggedRef = useRef(false);
   const answerTimerRef = useRef<number | null>(null);
+  const assistantProvider = useMemo(() => createPlaceholderAssistantProvider(), []);
 
   const loadStudyCards = useCallback(async (preferredCardId?: string) => {
     setIsLoading(true);
     const now = new Date();
-    const studyCards = await storage.listStudyCards({
-      deckId,
-      now,
-    });
+    const [studyCards, deck] = await Promise.all([
+      storage.listStudyCards({ deckId, now }),
+      storage.getDeck(deckId),
+    ]);
     const activePool = selectActivePool(studyCards, now);
     const orderedPool = preferredCardId
       ? moveCardToFront(activePool, preferredCardId)
@@ -99,6 +123,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     setVisibleExplanationCardId(null);
     setExplanationError("");
     setIsLoadingExplanation(false);
+    setDeckName(deck?.name ?? "");
+    setIsAssistantOpen(false);
+    setAssistantMessages([]);
+    setAssistantError("");
+    setRetryableUserMessage(null);
+    setIsEditingCurrentCard(false);
+    setEditingCardError("");
     setIsLoading(false);
   }, [deckId, storage]);
 
@@ -147,6 +178,37 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
   const currentStudyCard = cards[0] ?? null;
 
+  useEffect(() => {
+    if (!isAssistantOpen || !currentStudyCard) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    async function loadAssistantMessages() {
+      const thread = await storage.getOrCreateChatThread(
+        currentStudyCard.card.id,
+      );
+      const messages = await storage.listChatMessages(thread.id);
+
+      if (isCurrent) {
+        setAssistantMessages(messages);
+      }
+    }
+
+    void loadAssistantMessages().catch((error) => {
+      if (isCurrent) {
+        setAssistantError(
+          error instanceof Error ? error.message : "Could not load this chat.",
+        );
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentStudyCard, isAssistantOpen, storage]);
+
   const submitAnswer = useCallback(
     async (studyCard: StudyCard, answer: StudyAnswer) => {
       try {
@@ -173,7 +235,13 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
   const answerWithAnimation = useCallback(
     (answer: StudyAnswer, startOffset: DragOffset = EMPTY_DRAG_OFFSET) => {
-      if (!currentStudyCard || isSubmitting || outgoingStudyCard) {
+      if (
+        !currentStudyCard ||
+        isSubmitting ||
+        outgoingStudyCard ||
+        isAssistantOpen ||
+        isEditingCurrentCard
+      ) {
         return false;
       }
 
@@ -194,6 +262,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       setIsAnswerVisible(false);
       setVisibleExplanationCardId(null);
       setExplanationError("");
+      setIsEditingCurrentCard(false);
       setDragOffset(EMPTY_DRAG_OFFSET);
 
       answerTimerRef.current = window.setTimeout(() => {
@@ -207,6 +276,8 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     },
     [
       currentStudyCard,
+      isAssistantOpen,
+      isEditingCurrentCard,
       isAnswerVisible,
       isSubmitting,
       outgoingStudyCard,
@@ -216,7 +287,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (isInteractiveTarget(event.target)) {
+      if (
+        isAssistantOpen ||
+        isEditingCurrentCard ||
+        isInteractiveTarget(event.target)
+      ) {
         return;
       }
 
@@ -241,10 +316,14 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [answerWithAnimation]);
+  }, [answerWithAnimation, isAssistantOpen, isEditingCurrentCard]);
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === "mouse" && event.button !== 0) {
+    if (
+      isEditingCurrentCard ||
+      isAssistantOpen ||
+      (event.pointerType === "mouse" && event.button !== 0)
+    ) {
       return;
     }
 
@@ -258,7 +337,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (dragStartRef.current === null) {
+    if (
+      isEditingCurrentCard ||
+      isAssistantOpen ||
+      dragStartRef.current === null
+    ) {
       return;
     }
 
@@ -279,7 +362,11 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
-    if (dragStartRef.current === null) {
+    if (
+      isEditingCurrentCard ||
+      isAssistantOpen ||
+      dragStartRef.current === null
+    ) {
       return;
     }
 
@@ -307,6 +394,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }
 
   function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
+    if (isEditingCurrentCard || isAssistantOpen) {
+      return;
+    }
+
     const offset = dragLastOffsetRef.current;
 
     if (Math.abs(offset.x) >= SWIPE_THRESHOLD) {
@@ -349,7 +440,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }
 
   async function deprioritizeCurrentCard() {
-    if (!currentStudyCard || isSubmitting) {
+    if (!currentStudyCard || isSubmitting || isAssistantOpen) {
       return;
     }
 
@@ -380,7 +471,12 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
   }
 
   async function toggleCurrentCardExplanation() {
-    if (!currentStudyCard || isSubmitting || isLoadingExplanation) {
+    if (
+      !currentStudyCard ||
+      isSubmitting ||
+      isLoadingExplanation ||
+      isAssistantOpen
+    ) {
       return;
     }
 
@@ -448,16 +544,165 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
     }
   }
 
+  function openCurrentCardEditor(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!currentStudyCard || isSubmitting) {
+      return;
+    }
+
+    setEditingQuestion(currentStudyCard.card.question);
+    setEditingAnswer(currentStudyCard.card.answer);
+    setEditingExplanation(currentStudyCard.card.explanation);
+    setEditingCardError("");
+    setIsEditingCurrentCard(true);
+  }
+
+  function cancelCurrentCardEdit() {
+    setEditingCardError("");
+    setIsEditingCurrentCard(false);
+  }
+
+  async function saveCurrentCardEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!currentStudyCard || isSavingCardEdit) {
+      return;
+    }
+
+    const question = editingQuestion.trim();
+    const answer = editingAnswer.trim();
+    const explanation = editingExplanation.trim();
+    const validation = validateCardContent({ question, answer, explanation });
+
+    if (!validation.isValid) {
+      setEditingCardError(validation.message);
+      return;
+    }
+
+    setIsSavingCardEdit(true);
+    setEditingCardError("");
+
+    try {
+      const updatedCard = await storage.updateCard(currentStudyCard.card.id, {
+        question,
+        answer,
+        explanation,
+      });
+
+      setCards((currentCards) =>
+        currentCards.map((studyCard) =>
+          studyCard.card.id === updatedCard.id
+            ? { ...studyCard, card: updatedCard }
+            : studyCard,
+        ),
+      );
+      setIsEditingCurrentCard(false);
+    } catch (error) {
+      setEditingCardError(
+        error instanceof Error ? error.message : "Could not save this card.",
+      );
+    } finally {
+      setIsSavingCardEdit(false);
+    }
+  }
+
+  async function sendCurrentAssistantMessage(message: string) {
+    if (!currentStudyCard || isAssistantSending) {
+      return;
+    }
+
+    const validation = validateChatMessage(message);
+
+    if (!validation.isValid) {
+      setAssistantError(validation.message);
+      setRetryableUserMessage(null);
+      return;
+    }
+
+    setIsAssistantSending(true);
+    setAssistantError("");
+    setRetryableUserMessage(null);
+
+    try {
+      const messages = await sendAssistantMessage({
+        storage,
+        provider: assistantProvider,
+        card: currentStudyCard.card,
+        deckName,
+        direction: currentStudyCard.direction,
+        visibleSide: isAnswerVisible ? "answer" : "prompt",
+        message,
+      });
+
+      setAssistantMessages(messages);
+    } catch (error) {
+      const thread = await storage.getOrCreateChatThread(
+        currentStudyCard.card.id,
+      );
+      const messages = await storage.listChatMessages(thread.id);
+      const retryableMessage = [...messages]
+        .reverse()
+        .find((storedMessage) => storedMessage.role === "user");
+
+      setAssistantMessages(messages);
+      setRetryableUserMessage(retryableMessage ?? null);
+      setAssistantError(
+        error instanceof Error ? error.message : "Could not get an assistant reply.",
+      );
+    } finally {
+      setIsAssistantSending(false);
+    }
+  }
+
+  async function retryCurrentAssistantReply() {
+    if (
+      !currentStudyCard ||
+      !retryableUserMessage ||
+      isAssistantSending
+    ) {
+      return;
+    }
+
+    setIsAssistantSending(true);
+    setAssistantError("");
+
+    try {
+      const messages = await retryAssistantReply({
+        storage,
+        provider: assistantProvider,
+        card: currentStudyCard.card,
+        deckName,
+        direction: currentStudyCard.direction,
+        visibleSide: isAnswerVisible ? "answer" : "prompt",
+        userMessage: retryableUserMessage,
+      });
+
+      setAssistantMessages(messages);
+      setRetryableUserMessage(null);
+    } catch (error) {
+      setAssistantError(
+        error instanceof Error ? error.message : "Could not get an assistant reply.",
+      );
+    } finally {
+      setIsAssistantSending(false);
+    }
+  }
+
   async function createCard(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const question = newQuestion.trim();
     const answer = newAnswer.trim();
+    const validation = validateCardContent({ question, answer });
 
-    if (!question || !answer) {
+    if (!validation.isValid) {
+      setNewCardError(validation.message);
       return;
     }
 
+    setNewCardError("");
     const card = await storage.createCard({
       deckId,
       question,
@@ -528,26 +773,64 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 key={`current-${currentStudyCard.card.id}-${currentStudyCard.direction}`}
-                role="button"
+                role={isEditingCurrentCard ? undefined : "button"}
                 style={currentCardStyle}
-                tabIndex={0}
+                tabIndex={isEditingCurrentCard ? undefined : 0}
               >
-                <div
-                  className="flashcard-inner relative h-full min-h-0"
-                  data-flipped={isAnswerVisible}
-                >
-                  <FlashcardFace text={getPromptText(currentStudyCard)} />
-                  <FlashcardFace isBack text={getAnswerText(currentStudyCard)} />
-                </div>
-                <StudyCardFeedbackControls
-                  isDisabled={isSubmitting}
-                  explanationError={explanationError}
-                  explanationText={currentExplanationText}
-                  isExplanationVisible={isExplanationVisible}
-                  isLoadingExplanation={isLoadingExplanation}
-                  onToggleExplanation={toggleCurrentCardExplanation}
-                  onThumbsDown={deprioritizeCurrentCard}
-                />
+                {isEditingCurrentCard ? (
+                  <StudyCardEditForm
+                    answer={editingAnswer}
+                    error={editingCardError}
+                    explanation={editingExplanation}
+                    isSaving={isSavingCardEdit}
+                    onAnswerChange={(value) => {
+                      setEditingAnswer(value);
+                      setEditingCardError("");
+                    }}
+                    onCancel={cancelCurrentCardEdit}
+                    onExplanationChange={(value) => {
+                      setEditingExplanation(value);
+                      setEditingCardError("");
+                    }}
+                    onQuestionChange={(value) => {
+                      setEditingQuestion(value);
+                      setEditingCardError("");
+                    }}
+                    onSubmit={saveCurrentCardEdit}
+                    question={editingQuestion}
+                  />
+                ) : (
+                  <>
+                    <div
+                      className="flashcard-inner relative h-full min-h-0"
+                      data-flipped={isAnswerVisible}
+                    >
+                      <FlashcardFace text={getPromptText(currentStudyCard)} />
+                      <FlashcardFace
+                        isBack
+                        text={getAnswerText(currentStudyCard)}
+                      />
+                    </div>
+                    <button
+                      aria-label="Edit card"
+                      className="absolute right-5 top-5 z-20 grid size-10 place-items-center rounded-full text-slate-400/75 transition hover:text-slate-500 disabled:opacity-35 dark:text-slate-300/55"
+                      disabled={isSubmitting || isAssistantOpen}
+                      onClick={openCurrentCardEditor}
+                      type="button"
+                    >
+                      <Settings aria-hidden="true" size={19} strokeWidth={2.1} />
+                    </button>
+                    <StudyCardFeedbackControls
+                      isDisabled={isSubmitting || isAssistantOpen}
+                      explanationError={explanationError}
+                      explanationText={currentExplanationText}
+                      isExplanationVisible={isExplanationVisible}
+                      isLoadingExplanation={isLoadingExplanation}
+                      onToggleExplanation={toggleCurrentCardExplanation}
+                      onThumbsDown={deprioritizeCurrentCard}
+                    />
+                  </>
+                )}
               </div>
             ) : null}
 
@@ -578,7 +861,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full border border-[var(--app-danger)] bg-[var(--app-danger-soft)] px-4 font-black text-[var(--app-danger)] shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={(event) => handleAnswerClick(event, "dontKnow")}
-              disabled={isSubmitting || !currentStudyCard}
+              disabled={isSubmitting || isAssistantOpen || !currentStudyCard}
               type="button"
             >
               <X aria-hidden="true" size={20} strokeWidth={2.4} />
@@ -587,7 +870,7 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             <button
               className="flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--app-success)] px-4 font-black text-white shadow-[var(--app-shadow-soft)] disabled:opacity-50"
               onClick={(event) => handleAnswerClick(event, "know")}
-              disabled={isSubmitting || !currentStudyCard}
+              disabled={isSubmitting || isAssistantOpen || !currentStudyCard}
               type="button"
             >
               <Check aria-hidden="true" size={20} strokeWidth={2.4} />
@@ -618,17 +901,31 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
           <textarea
             aria-label="New card question"
             className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-            onChange={(event) => setNewQuestion(event.target.value)}
+            onChange={(event) => {
+              setNewQuestion(event.target.value);
+              setNewCardError("");
+            }}
             placeholder="Question"
             value={newQuestion}
           />
           <textarea
             aria-label="New card answer"
             className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-            onChange={(event) => setNewAnswer(event.target.value)}
+            onChange={(event) => {
+              setNewAnswer(event.target.value);
+              setNewCardError("");
+            }}
             placeholder="Answer"
             value={newAnswer}
           />
+          {newCardError ? (
+            <p
+              className="text-sm font-semibold text-[var(--app-danger)]"
+              role="alert"
+            >
+              {newCardError}
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <button
               className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-3 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
@@ -640,7 +937,10 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
             </button>
             <button
               className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-3 font-black dark:bg-white/10"
-              onClick={() => setIsAddingCard(false)}
+              onClick={() => {
+                setIsAddingCard(false);
+                setNewCardError("");
+              }}
               type="button"
             >
               <X aria-hidden="true" size={18} strokeWidth={2.3} />
@@ -651,13 +951,37 @@ export function StudySessionScreen({ deckId }: StudySessionScreenProps) {
       ) : null}
 
       <button
+        data-app-control
         aria-label="Add card"
-        className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur dark:border-white/10 dark:bg-white/10"
-        onClick={() => setIsAddingCard((currentValue) => !currentValue)}
+        className={`fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-7 z-[2147483647] grid size-12 place-items-center rounded-full border border-white/80 bg-white/90 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] backdrop-blur transition disabled:opacity-35 dark:border-white/10 dark:bg-white/10 ${
+          isAssistantOpen ? "pointer-events-none opacity-0" : ""
+        }`}
+        disabled={isEditingCurrentCard || isAssistantOpen}
+        onClick={() => {
+          setNewCardError("");
+          setIsAddingCard((currentValue) => !currentValue);
+        }}
         type="button"
       >
         <Plus aria-hidden="true" size={22} strokeWidth={2.5} />
       </button>
+      {currentStudyCard && !isEditingCurrentCard && !isAddingCard ? (
+        <StudyAssistantSheet
+          error={assistantError}
+          hasRetry={Boolean(retryableUserMessage)}
+          isOpen={isAssistantOpen}
+          isSending={isAssistantSending}
+          messages={assistantMessages}
+          onClose={() => setIsAssistantOpen(false)}
+          onOpen={() => {
+            setAssistantError("");
+            setRetryableUserMessage(null);
+            setIsAssistantOpen(true);
+          }}
+          onRetry={retryCurrentAssistantReply}
+          onSend={sendCurrentAssistantMessage}
+        />
+      ) : null}
     </section>
   );
 }
@@ -679,6 +1003,88 @@ function FlashcardFace({
         {text}
       </span>
     </div>
+  );
+}
+
+function StudyCardEditForm({
+  answer,
+  error,
+  explanation,
+  isSaving,
+  onAnswerChange,
+  onCancel,
+  onExplanationChange,
+  onQuestionChange,
+  onSubmit,
+  question,
+}: {
+  answer: string;
+  error: string;
+  explanation: string;
+  isSaving: boolean;
+  onAnswerChange: (value: string) => void;
+  onCancel: () => void;
+  onExplanationChange: (value: string) => void;
+  onQuestionChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  question: string;
+}) {
+  return (
+    <form
+      className="relative z-30 flex h-full min-h-0 flex-col gap-3 p-6 text-left"
+      onPointerDown={(event) => event.stopPropagation()}
+      onSubmit={onSubmit}
+    >
+      <label className="grid gap-1.5 text-xs font-bold text-[var(--app-text-muted)]">
+        Question
+        <textarea
+          className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-sm font-semibold leading-5 text-[var(--app-text)] outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+          onChange={(event) => onQuestionChange(event.target.value)}
+          value={question}
+        />
+      </label>
+      <label className="grid gap-1.5 text-xs font-bold text-[var(--app-text-muted)]">
+        Answer
+        <textarea
+          className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-sm leading-5 text-[var(--app-text)] outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+          onChange={(event) => onAnswerChange(event.target.value)}
+          value={answer}
+        />
+      </label>
+      <label className="grid gap-1.5 text-xs font-bold text-[var(--app-text-muted)]">
+        Explanation
+        <textarea
+          className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-sm leading-5 text-[var(--app-text)] outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
+          maxLength={500}
+          onChange={(event) => onExplanationChange(event.target.value)}
+          value={explanation}
+        />
+      </label>
+      {error ? (
+        <p className="text-sm font-semibold text-[var(--app-danger)]" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-auto grid grid-cols-2 gap-2 pt-1">
+        <button
+          className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-3 text-sm font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
+          disabled={isSaving}
+          type="submit"
+        >
+          <Check aria-hidden="true" size={18} strokeWidth={2.3} />
+          {isSaving ? "Saving..." : "Save"}
+        </button>
+        <button
+          className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-white/60 px-3 text-sm font-black text-[var(--app-text)] dark:bg-white/10"
+          disabled={isSaving}
+          onClick={onCancel}
+          type="button"
+        >
+          <X aria-hidden="true" size={18} strokeWidth={2.3} />
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -708,7 +1114,7 @@ function StudyCardFeedbackControls({
       onPointerDown={(event) => event.stopPropagation()}
     >
       {isExplanationVisible ? (
-        <div className="max-h-32 overscroll-contain rounded-[var(--app-radius-sm)] border border-slate-200/80 bg-white/85 p-3 text-left text-xs font-semibold leading-5 text-[var(--app-text-muted)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+        <div className="break-words rounded-[var(--app-radius-sm)] border border-slate-200/80 bg-white/85 p-3 text-left text-xs font-semibold leading-5 text-[var(--app-text-muted)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
           {isLoadingExplanation && !visibleText
             ? "Loading explanation..."
             : visibleText}

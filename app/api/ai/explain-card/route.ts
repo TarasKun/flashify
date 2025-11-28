@@ -3,6 +3,7 @@ import {
   OpenRouterRequestError,
   requestJsonCompletion,
 } from "@/lib/ai/openrouter";
+import { CONTENT_LIMITS } from "@/lib/domain";
 
 type ExplainCardRequest = {
   question?: unknown;
@@ -40,12 +41,12 @@ export async function POST(request: Request) {
 
     const parsed = await requestJsonCompletion<ExplainCardResponse>({
       jsonSchema: EXPLAIN_CARD_SCHEMA,
-      maxTokens: 500,
+      maxTokens: 260,
       messages: [
         {
           role: "system",
           content:
-            "You explain flashcard answers in 3-5 clear beginner-friendly sentences. Do not change the question or answer.",
+            "You explain flashcard answers in 4-5 meaningful sentences for beginners. The explanation must complement the answer, not repeat it. Do not change the question or answer. Keep the full explanation at 500 characters or fewer.",
         },
         {
           role: "user",
@@ -54,12 +55,51 @@ export async function POST(request: Request) {
       ],
     });
 
-    return Response.json({
-      explanation: parsed.explanation.trim(),
+    const initialExplanation = normalizeExplanation(parsed.explanation);
+
+    if (isValidExplanation(initialExplanation)) {
+      return Response.json({ explanation: initialExplanation });
+    }
+
+    const shortened = await requestJsonCompletion<ExplainCardResponse>({
+      jsonSchema: EXPLAIN_CARD_SCHEMA,
+      maxTokens: 180,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Rewrite the draft as 4-5 meaningful, beginner-friendly sentences. Keep the full explanation at 500 characters or fewer. Preserve useful context, do not change the question or answer, and return only the JSON response.",
+        },
+        {
+          role: "user",
+          content: `Question: ${question}\nAnswer: ${answer}\n\nDraft explanation:\n${initialExplanation}`,
+        },
+      ],
     });
+
+    const shortenedExplanation = normalizeExplanation(shortened.explanation);
+
+    if (!isValidExplanation(shortenedExplanation)) {
+      return Response.json(
+        {
+          error: `Explanation must be ${CONTENT_LIMITS.cardExplanation} characters or fewer.`,
+        },
+        { status: 422 },
+      );
+    }
+
+    return Response.json({ explanation: shortenedExplanation });
   } catch (error) {
     return handleAiRouteError(error);
   }
+}
+
+function normalizeExplanation(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidExplanation(value: string): boolean {
+  return Boolean(value) && value.length <= CONTENT_LIMITS.cardExplanation;
 }
 
 function handleAiRouteError(error: unknown) {

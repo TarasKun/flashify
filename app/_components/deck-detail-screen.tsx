@@ -13,7 +13,14 @@ import {
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Card, Deck } from "@/lib/domain";
+import {
+  validateCardContent,
+  validateDeckName,
+  validateImportCards,
+  validateImportSourceText,
+  type Card,
+  type Deck,
+} from "@/lib/domain";
 import { buildAiJsonPrompt } from "@/lib/domain/ai-prompt";
 import {
   getCardLearningProgress,
@@ -39,9 +46,11 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [deckName, setDeckName] = useState("");
+  const [deckError, setDeckError] = useState("");
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [cardError, setCardError] = useState("");
   const [isImportingText, setIsImportingText] = useState(false);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
@@ -91,11 +100,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     event.preventDefault();
 
     const name = deckName.trim();
+    const validation = validateDeckName(name);
 
-    if (!deck || !name) {
+    if (!deck) {
       return;
     }
 
+    if (!validation.isValid) {
+      setDeckError(validation.message);
+      return;
+    }
+
+    setDeckError("");
     await storage.updateDeck(deck.id, { name });
     setIsEditing(false);
     await loadDeck();
@@ -121,11 +137,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
     const question = newQuestion.trim();
     const answer = newAnswer.trim();
+    const validation = validateCardContent({ question, answer });
 
-    if (!deck || !question || !answer) {
+    if (!deck) {
       return;
     }
 
+    if (!validation.isValid) {
+      setCardError(validation.message);
+      return;
+    }
+
+    setCardError("");
     await storage.createCard({
       deckId: deck.id,
       question,
@@ -141,8 +164,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     event.preventDefault();
 
     const text = importText.trim();
+    const sourceValidation = validateImportSourceText(importText);
 
     if (!deck || !text || isImportingCards) {
+      return;
+    }
+
+    if (!sourceValidation.isValid) {
+      setImportError(sourceValidation.message);
       return;
     }
 
@@ -157,6 +186,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       if (jsonCards) {
         if (jsonCards.length === 0) {
           throw new Error("No valid cards were found in this JSON.");
+        }
+
+        const cardsValidation = validateImportCards(jsonCards);
+
+        if (!cardsValidation.isValid) {
+          throw new Error(cardsValidation.message);
         }
 
         setImportText("");
@@ -205,6 +240,12 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         throw new Error("No cards were found in this text.");
       }
 
+      const cardsValidation = validateImportCards(parsedCards);
+
+      if (!cardsValidation.isValid) {
+        throw new Error(cardsValidation.message);
+      }
+
       setImportText("");
       setImportPreviewCards(parsedCards);
       setImportPreviewMessage(`Preview ready: ${parsedCards.length} cards`);
@@ -222,6 +263,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
     field: "question" | "answer" | "explanation",
     value: string,
   ) {
+    setImportError("");
     setImportPreviewCards((currentCards) =>
       currentCards.map((card) =>
         card.id === id
@@ -265,11 +307,17 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
         question: card.question.trim(),
         answer: card.answer.trim(),
         explanation: card.explanation.trim(),
-      }))
-      .filter((card) => card.question && card.answer);
+      }));
 
     if (cardsToSave.length === 0) {
       setImportError("No valid cards to save.");
+      return;
+    }
+
+    const cardsValidation = validateImportCards(cardsToSave);
+
+    if (!cardsValidation.isValid) {
+      setImportError(cardsValidation.message);
       return;
     }
 
@@ -292,6 +340,7 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
   }
 
   function startEditingCard(card: Card) {
+    setCardError("");
     setEditingCardId(card.id);
     setEditingQuestion(card.question);
     setEditingAnswer(card.answer);
@@ -302,11 +351,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
 
     const question = editingQuestion.trim();
     const answer = editingAnswer.trim();
+    const validation = validateCardContent({ question, answer });
 
-    if (!editingCardId || !question || !answer) {
+    if (!editingCardId) {
       return;
     }
 
+    if (!validation.isValid) {
+      setCardError(validation.message);
+      return;
+    }
+
+    setCardError("");
     await storage.updateCard(editingCardId, {
       question,
       answer,
@@ -361,9 +417,20 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
           <form className="grid gap-3" onSubmit={renameDeck}>
             <input
               className="h-14 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-xl font-black outline-none focus:border-[var(--app-primary)] dark:bg-white/10"
-              onChange={(event) => setDeckName(event.target.value)}
+              onChange={(event) => {
+                setDeckName(event.target.value);
+                setDeckError("");
+              }}
               value={deckName}
             />
+            {deckError ? (
+              <p
+                className="text-sm font-semibold text-[var(--app-danger)]"
+                role="alert"
+              >
+                {deckError}
+              </p>
+            ) : null}
             <div className="grid grid-cols-2 gap-2">
               <button
                 className="h-12 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)]"
@@ -443,7 +510,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
       <section className="grid min-w-0 grid-cols-2 gap-3">
         <button
           className="flex h-28 flex-col justify-between rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-left font-black"
-          onClick={() => setIsAddingCard((currentValue) => !currentValue)}
+          onClick={() => {
+            setCardError("");
+            setIsAddingCard((currentValue) => !currentValue);
+          }}
           type="button"
         >
           <Plus
@@ -484,7 +554,10 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             <textarea
               className="mt-2 min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="new-card-question"
-              onChange={(event) => setNewQuestion(event.target.value)}
+              onChange={(event) => {
+                setNewQuestion(event.target.value);
+                setCardError("");
+              }}
               placeholder="What is a DTO?"
               value={newQuestion}
             />
@@ -500,11 +573,22 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
             <textarea
               className="mt-2 min-h-28 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
               id="new-card-answer"
-              onChange={(event) => setNewAnswer(event.target.value)}
+              onChange={(event) => {
+                setNewAnswer(event.target.value);
+                setCardError("");
+              }}
               placeholder="DTO means Data Transfer Object."
               value={newAnswer}
             />
           </div>
+          {cardError ? (
+            <p
+              className="text-sm font-semibold text-[var(--app-danger)]"
+              role="alert"
+            >
+              {cardError}
+            </p>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -734,16 +818,18 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                     <form className="grid gap-3" onSubmit={updateCard}>
                       <textarea
                         className="min-h-20 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base font-bold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-                        onChange={(event) =>
-                          setEditingQuestion(event.target.value)
-                        }
+                        onChange={(event) => {
+                          setEditingQuestion(event.target.value);
+                          setCardError("");
+                        }}
                         value={editingQuestion}
                       />
                       <textarea
                         className="min-h-24 w-full resize-none rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-white/70 p-3 text-base outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-                        onChange={(event) =>
-                          setEditingAnswer(event.target.value)
-                        }
+                        onChange={(event) => {
+                          setEditingAnswer(event.target.value);
+                          setCardError("");
+                        }}
                         value={editingAnswer}
                       />
                       <div className="grid grid-cols-2 gap-2">
@@ -761,6 +847,14 @@ export function DeckDetailScreen({ deckId }: DeckDetailScreenProps) {
                           Cancel
                         </button>
                       </div>
+                      {cardError ? (
+                        <p
+                          className="text-sm font-semibold text-[var(--app-danger)]"
+                          role="alert"
+                        >
+                          {cardError}
+                        </p>
+                      ) : null}
                     </form>
                   ) : (
                     <>

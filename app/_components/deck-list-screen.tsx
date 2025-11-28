@@ -9,7 +9,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import type { Card, Deck } from "@/lib/domain";
+import { validateDeckName, type Card, type Deck } from "@/lib/domain";
 import { createIndexedDbStorage, type DeckProgress } from "@/lib/storage";
 
 const ACTIVE_DECK_STORAGE_KEY = "flashify.activeDeckId";
@@ -27,6 +27,7 @@ export function DeckListScreen() {
   const [activeDeckState, setActiveDeckState] =
     useState<ActiveDeckState | null>(null);
   const [newDeckName, setNewDeckName] = useState("");
+  const [newDeckError, setNewDeckError] = useState("");
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 
   const loadDecks = useCallback(async () => {
@@ -65,11 +66,18 @@ export function DeckListScreen() {
     event.preventDefault();
 
     const name = newDeckName.trim();
+    const validation = validateDeckName(name);
 
-    if (!name || isCreatingDeck) {
+    if (isCreatingDeck) {
       return;
     }
 
+    if (!validation.isValid) {
+      setNewDeckError(validation.message);
+      return;
+    }
+
+    setNewDeckError("");
     setIsCreatingDeck(true);
 
     try {
@@ -127,10 +135,21 @@ export function DeckListScreen() {
           <form className="mt-5 grid gap-3" onSubmit={createFirstDeck}>
             <input
               className="h-12 rounded-full border border-[var(--app-border)] bg-white/70 px-4 text-center text-base font-semibold outline-none transition focus:border-[var(--app-primary)] dark:bg-white/10"
-              onChange={(event) => setNewDeckName(event.target.value)}
+              onChange={(event) => {
+                setNewDeckName(event.target.value);
+                setNewDeckError("");
+              }}
               placeholder="Deck name"
               value={newDeckName}
             />
+            {newDeckError ? (
+              <p
+                className="text-sm font-semibold text-[var(--app-danger)]"
+                role="alert"
+              >
+                {newDeckError}
+              </p>
+            ) : null}
             <button
               className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--app-primary)] px-4 font-black text-[var(--app-primary-contrast)] disabled:opacity-50"
               disabled={!newDeckName.trim() || isCreatingDeck}

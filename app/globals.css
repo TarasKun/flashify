@@ -121,6 +121,11 @@ body {
   overflow-x: hidden;
 }
 
+body:has([data-assistant-open]) [data-app-control] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 body {
   min-height: 100%;
   display: flex;

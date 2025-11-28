@@ -1,5 +1,8 @@
 import type {
   Card,
+  ChatMessage,
+  ChatThread,
+  CreateChatMessageInput,
   CreateCardInput,
   CreateDeckInput,
   Deck,
@@ -40,6 +43,10 @@ export type FlashifyStorage = {
   updateCard(id: EntityId, input: UpdateCardInput): Promise<Card>;
   saveCardProgress(card: Card): Promise<Card>;
   deleteCard(id: EntityId): Promise<void>;
+
+  getOrCreateChatThread(cardId: EntityId): Promise<ChatThread>;
+  listChatMessages(threadId: EntityId): Promise<ChatMessage[]>;
+  createChatMessage(input: CreateChatMessageInput): Promise<ChatMessage>;
 
   getDeckProgress(deckId: EntityId): Promise<DeckProgress>;
 

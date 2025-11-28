@@ -2,7 +2,10 @@ import {
   createEmptyCardProgress,
   isEligibleForStudy,
   type Card,
+  type ChatMessage,
+  type ChatThread,
   type CreateCardInput,
+  type CreateChatMessageInput,
   type CreateDeckInput,
   type Deck,
   type EntityId,
@@ -18,11 +21,13 @@ import type {
 import { StorageRecordNotFoundError } from "./types";
 
 const DB_NAME = "flashify";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const DECKS_STORE = "decks";
 const CARDS_STORE = "cards";
 const SETTINGS_STORE = "settings";
+const CHAT_THREADS_STORE = "chatThreads";
+const CHAT_MESSAGES_STORE = "chatMessages";
 const APP_SETTINGS_ID = "app";
 
 type SettingsRecord = AppSettings & {
@@ -199,6 +204,80 @@ class IndexedDbFlashifyStorage implements FlashifyStorage {
     });
   }
 
+  async getOrCreateChatThread(cardId: EntityId): Promise<ChatThread> {
+    const db = await this.getDb();
+    const existingThread = await getChatThreadByCard(db, cardId);
+
+    if (existingThread) {
+      return existingThread;
+    }
+
+    const now = new Date().toISOString();
+    const thread: ChatThread = {
+      id: createId(),
+      cardId,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    };
+
+    await putInStore(db, CHAT_THREADS_STORE, thread);
+
+    return thread;
+  }
+
+  async listChatMessages(threadId: EntityId): Promise<ChatMessage[]> {
+    const db = await this.getDb();
+    const messages = await getAllChatMessagesByThread(db, threadId);
+
+    return messages
+      .filter((message) => !message.deletedAt)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  async createChatMessage(
+    input: CreateChatMessageInput,
+  ): Promise<ChatMessage> {
+    const db = await this.getDb();
+    const thread = await getRequiredFromStore<ChatThread>(
+      db,
+      CHAT_THREADS_STORE,
+      "Chat thread",
+      input.threadId,
+    );
+
+    if (thread.cardId !== input.cardId) {
+      throw new Error("Chat message card does not match its thread.");
+    }
+
+    const existingMessages = await this.listChatMessages(thread.id);
+    const createdAt = createNextMessageTimestamp(existingMessages);
+    const message: ChatMessage = {
+      id: createId(),
+      threadId: thread.id,
+      cardId: input.cardId,
+      role: input.role,
+      content: input.content.trim(),
+      createdAt,
+      receivedAt: null,
+      deletedAt: null,
+    };
+
+    const transaction = db.transaction(
+      [CHAT_THREADS_STORE, CHAT_MESSAGES_STORE],
+      "readwrite",
+    );
+    transaction.objectStore(CHAT_MESSAGES_STORE).put(message);
+    transaction.objectStore(CHAT_THREADS_STORE).put({
+      ...thread,
+      updatedAt: createdAt,
+    } satisfies ChatThread);
+
+    await waitForTransaction(transaction);
+
+    return message;
+  }
+
   async getDeckProgress(deckId: EntityId): Promise<DeckProgress> {
     const cards = await this.listCardsForDeck(deckId);
 
@@ -252,15 +331,28 @@ class IndexedDbFlashifyStorage implements FlashifyStorage {
     settings: AppSettings;
   }): Promise<void> {
     const db = await this.getDb();
-    const tx = db.transaction([DECKS_STORE, CARDS_STORE, SETTINGS_STORE], "readwrite");
+    const tx = db.transaction(
+      [
+        DECKS_STORE,
+        CARDS_STORE,
+        SETTINGS_STORE,
+        CHAT_THREADS_STORE,
+        CHAT_MESSAGES_STORE,
+      ],
+      "readwrite",
+    );
 
     const decksStore = tx.objectStore(DECKS_STORE);
     const cardsStore = tx.objectStore(CARDS_STORE);
     const settingsStore = tx.objectStore(SETTINGS_STORE);
+    const chatThreadsStore = tx.objectStore(CHAT_THREADS_STORE);
+    const chatMessagesStore = tx.objectStore(CHAT_MESSAGES_STORE);
 
     decksStore.clear();
     cardsStore.clear();
     settingsStore.clear();
+    chatThreadsStore.clear();
+    chatMessagesStore.clear();
 
     input.decks.forEach((deck) => decksStore.put(deck));
     input.cards.forEach((card) => cardsStore.put(card));
@@ -308,6 +400,25 @@ function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
         db.createObjectStore(SETTINGS_STORE, { keyPath: "id" });
+      }
+
+      if (!db.objectStoreNames.contains(CHAT_THREADS_STORE)) {
+        const threadsStore = db.createObjectStore(CHAT_THREADS_STORE, {
+          keyPath: "id",
+        });
+
+        threadsStore.createIndex("cardId", "cardId", { unique: true });
+      }
+
+      if (!db.objectStoreNames.contains(CHAT_MESSAGES_STORE)) {
+        const messagesStore = db.createObjectStore(CHAT_MESSAGES_STORE, {
+          keyPath: "id",
+        });
+
+        messagesStore.createIndex("threadId", "threadId", { unique: false });
+        messagesStore.createIndex("threadCreatedAt", ["threadId", "createdAt"], {
+          unique: false,
+        });
       }
     };
 
@@ -375,6 +486,41 @@ function getAllCardsByDeck(
   });
 }
 
+function getChatThreadByCard(
+  db: IDBDatabase,
+  cardId: EntityId,
+): Promise<ChatThread | null> {
+  return new Promise((resolve, reject) => {
+    const request = db
+      .transaction(CHAT_THREADS_STORE, "readonly")
+      .objectStore(CHAT_THREADS_STORE)
+      .index("cardId")
+      .get(cardId);
+
+    request.onsuccess = () => {
+      const thread = (request.result as ChatThread | undefined) ?? null;
+      resolve(thread?.deletedAt ? null : thread);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function getAllChatMessagesByThread(
+  db: IDBDatabase,
+  threadId: EntityId,
+): Promise<ChatMessage[]> {
+  return new Promise((resolve, reject) => {
+    const request = db
+      .transaction(CHAT_MESSAGES_STORE, "readonly")
+      .objectStore(CHAT_MESSAGES_STORE)
+      .index("threadCreatedAt")
+      .getAll(IDBKeyRange.bound([threadId, ""], [threadId, "\uffff"]));
+
+    request.onsuccess = () => resolve(request.result as ChatMessage[]);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 function putInStore<T>(
   db: IDBDatabase,
   storeName: string,
@@ -401,4 +547,14 @@ function createId(): EntityId {
   }
 
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function createNextMessageTimestamp(messages: ChatMessage[]): string {
+  const latestTimestamp = messages.reduce((latest, message) => {
+    const timestamp = Date.parse(message.createdAt);
+
+    return Number.isNaN(timestamp) ? latest : Math.max(latest, timestamp);
+  }, 0);
+
+  return new Date(Math.max(Date.now(), latestTimestamp + 1)).toISOString();
 }

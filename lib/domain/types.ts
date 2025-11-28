@@ -74,3 +74,31 @@ export type StudyCardView = {
 };
 
 export type StudyAnswer = "know" | "dontKnow";
+
+export type ChatMessageRole = "user" | "assistant";
+
+export type ChatThread = {
+  id: EntityId;
+  cardId: EntityId;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+  deletedAt: ISODateString | null;
+};
+
+export type ChatMessage = {
+  id: EntityId;
+  threadId: EntityId;
+  cardId: EntityId;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: ISODateString;
+  receivedAt: ISODateString | null;
+  deletedAt: ISODateString | null;
+};
+
+export type CreateChatMessageInput = {
+  threadId: EntityId;
+  cardId: EntityId;
+  role: ChatMessageRole;
+  content: string;
+};
