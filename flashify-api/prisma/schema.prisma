@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CardStatus {
+  NEW      @map("new")
+  LEARNING @map("learning")
+  RESTING  @map("resting")
+  LEARNED  @map("learned")
+  REVIEW   @map("review")
+}
+
+enum StudyDirection {
+  FORWARD @map("forward")
+  REVERSE @map("reverse")
+}
+
+enum StudyAnswer {
+  KNOW      @map("know")
+  DONT_KNOW @map("dontKnow")
+}
+
+enum ChatMessageRole {
+  USER      @map("user")
+  ASSISTANT @map("assistant")
+}
+
+enum SyncEntityType {
+  DECK
+  CARD
+  STUDY_EVENT
+  CHAT_THREAD
+  CHAT_MESSAGE
+}
+
+enum SyncChangeType {
+  UPSERT
+  DELETE
+}
+
+model User {
+  id           String        @id @db.Uuid
+  email        String
+  displayName  String?
+  avatarUrl    String?
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  lastSeenAt   DateTime      @default(now()) @db.Timestamptz(6)
+  devices      Device[]
+  decks        Deck[]
+  cards        Card[]
+  studyEvents  StudyEvent[]
+  chatThreads  ChatThread[]
+  chatMessages ChatMessage[]
+  syncChanges  SyncChange[]
+
+  @@map("users")
+}
+
+model Device {
+  id          String       @id @db.Uuid
+  userId      String       @db.Uuid
+  name        String?
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  lastSeenAt  DateTime     @default(now()) @db.Timestamptz(6)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyEvents StudyEvent[]
+
+  @@unique([id, userId])
+  @@index([userId, lastSeenAt])
+  @@map("devices")
+}
+
+model Deck {
+  id          String       @id @db.Uuid
+  userId      String       @db.Uuid
+  name        String       @db.VarChar(80)
+  version     Int          @default(1)
+  createdAt   DateTime     @db.Timestamptz(6)
+  updatedAt   DateTime     @db.Timestamptz(6)
+  deletedAt   DateTime?    @db.Timestamptz(6)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards       Card[]
+  studyEvents StudyEvent[]
+
+  @@unique([id, userId])
+  @@index([userId, deletedAt, updatedAt])
+  @@index([userId, version])
+  @@map("decks")
+}
+
+model Card {
+  id           String        @id @db.Uuid
+  userId       String        @db.Uuid
+  deckId       String        @db.Uuid
+  question     String        @db.VarChar(500)
+  answer       String        @db.VarChar(1500)
+  explanation  String        @default("") @db.VarChar(500)
+  progress     Json          @db.JsonB
+  status       CardStatus
+  reviewLevel  Int
+  dueAt        DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @db.Timestamptz(6)
+  updatedAt    DateTime      @db.Timestamptz(6)
+  deletedAt    DateTime?     @db.Timestamptz(6)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck         Deck          @relation(fields: [deckId, userId], references: [id, userId], onDelete: Cascade)
+  studyEvents  StudyEvent[]
+  chatThreads  ChatThread[]
+  chatMessages ChatMessage[]
+
+  @@unique([id, userId])
+  @@index([userId, deckId, deletedAt])
+  @@index([userId, status, dueAt])
+  @@map("cards")
+}
+
+model StudyEvent {
+  id             String         @db.Uuid
+  userId         String         @db.Uuid
+  deviceId       String         @db.Uuid
+  deckId         String         @db.Uuid
+  cardId         String         @db.Uuid
+  direction      StudyDirection
+  answer         StudyAnswer
+  deviceSequence Int
+  answeredAt     DateTime       @db.Timestamptz(6)
+  receivedAt     DateTime       @default(now()) @db.Timestamptz(6)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device         Device         @relation(fields: [deviceId, userId], references: [id, userId], onDelete: Cascade)
+  deck           Deck           @relation(fields: [deckId, userId], references: [id, userId], onDelete: Cascade)
+  card           Card           @relation(fields: [cardId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@unique([userId, deviceId, deviceSequence])
+  @@index([userId, receivedAt])
+  @@map("study_events")
+}
+
+model ChatThread {
+  id        String        @id @db.Uuid
+  userId    String        @db.Uuid
+  cardId    String        @db.Uuid
+  createdAt DateTime      @db.Timestamptz(6)
+  updatedAt DateTime      @db.Timestamptz(6)
+  deletedAt DateTime?     @db.Timestamptz(6)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      Card          @relation(fields: [cardId, userId], references: [id, userId], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@unique([id, userId])
+  @@unique([userId, cardId])
+  @@index([userId, deletedAt, updatedAt])
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id         String          @id @db.Uuid
+  userId     String          @db.Uuid
+  threadId   String          @db.Uuid
+  cardId     String          @db.Uuid
+  role       ChatMessageRole
+  content    String          @db.VarChar(2000)
+  createdAt  DateTime        @db.Timestamptz(6)
+  receivedAt DateTime?       @db.Timestamptz(6)
+  deletedAt  DateTime?       @db.Timestamptz(6)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread     ChatThread      @relation(fields: [threadId, userId], references: [id, userId], onDelete: Cascade)
+  card       Card            @relation(fields: [cardId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@index([userId, threadId, createdAt])
+  @@index([userId, cardId, deletedAt])
+  @@map("chat_messages")
+}
+
+model SyncChange {
+  sequence    BigInt         @id @default(autoincrement())
+  userId      String         @db.Uuid
+  entityType  SyncEntityType
+  entityId    String         @db.Uuid
+  operationId String         @db.Uuid
+  changeType  SyncChangeType
+  createdAt   DateTime       @default(now()) @db.Timestamptz(6)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, operationId])
+  @@index([userId, sequence])
+  @@map("sync_changes")
+}

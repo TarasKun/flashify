@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "flashify-api/dist/**",
+    "packages/contracts/dist/**",
     "next-env.d.ts",
   ]),
 ]);

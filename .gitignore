@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -19,6 +20,9 @@
 
 # production
 /build
+/flashify-api/dist
+/flashify-api/src/generated
+/packages/contracts/dist
 
 # misc
 .DS_Store

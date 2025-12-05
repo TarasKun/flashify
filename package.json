@@ -2,10 +2,21 @@
   "name": "flashify",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "flashify-api"
+  ],
   "scripts": {
+    "api:build": "npm run build --workspace=@flashify/api",
+    "api:dev": "npm run start:dev --workspace=@flashify/api",
+    "api:test": "npm run test --workspace=@flashify/api",
+    "contracts:build": "npm run build --workspace=@flashify/contracts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "supabase:start": "supabase start",
+    "supabase:status": "supabase status",
+    "supabase:stop": "supabase stop",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -25,6 +36,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "fake-indexeddb": "^6.2.5",
+    "supabase": "^2.109.1",
     "typescript": "^5",
     "vitest": "^4.1.9"
   }
