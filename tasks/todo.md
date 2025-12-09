@@ -49,7 +49,10 @@ the checkpoint or relevant verification and report results.
   - Auth gate, session restoration, and persistent local guest identity are
     implemented and covered by automated checks. Manual Google OAuth checks on
     localhost and deployed preview remain pending provider confirmation.
-- [ ] Task 18: Verify Supabase tokens in NestJS.
+- [x] Task 18: Verify Supabase tokens in NestJS.
+  - NestJS now verifies bearer tokens through the configured Supabase JWKS,
+    validates issuer/audience/expiry, and exposes only a typed verified
+    principal to protected handlers. Unit and HTTP integration checks pass.
 - [ ] Task 19: Add current-user/device bootstrap endpoint.
 
 ## Phase F: Protected Cloud CRUD
