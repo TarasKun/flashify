@@ -46,6 +46,9 @@ the checkpoint or relevant verification and report results.
 ## Phase E: Authentication
 
 - [ ] Task 17: Add Supabase Google/guest auth gate.
+  - Auth gate, session restoration, and persistent local guest identity are
+    implemented and covered by automated checks. Manual Google OAuth checks on
+    localhost and deployed preview remain pending provider confirmation.
 - [ ] Task 18: Verify Supabase tokens in NestJS.
 - [ ] Task 19: Add current-user/device bootstrap endpoint.
 

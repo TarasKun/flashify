@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Download,
+  LogIn,
   Plus,
   Settings,
   Upload,
@@ -26,6 +27,7 @@ import {
   parseFlashifyBackupJson,
   restoreFlashifyData,
 } from "@/lib/storage";
+import { AuthGate, useFlashifyAuth } from "./auth-gate";
 import { ThemeToggle } from "./theme-toggle";
 
 const ACTIVE_DECK_STORAGE_KEY = "flashify.activeDeckId";
@@ -36,8 +38,18 @@ type AppShellProps = {
 };
 
 export function AppShell({ children }: AppShellProps) {
+  return (
+    <AuthGate>
+      <AppShellContent>{children}</AppShellContent>
+    </AuthGate>
+  );
+}
+
+function AppShellContent({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { errorMessage: authError, isStartingGoogle, startGoogleSignIn, status: authStatus } =
+    useFlashifyAuth();
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
@@ -302,6 +314,17 @@ export function AppShell({ children }: AppShellProps) {
                 </span>
                 <ThemeToggle />
               </div>
+              {authStatus === "guest" ? (
+                <button
+                  className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-primary-soft)] px-4 text-left text-xs font-black text-[var(--app-primary)] disabled:opacity-60"
+                  disabled={isStartingGoogle}
+                  onClick={() => void startGoogleSignIn()}
+                  type="button"
+                >
+                  <span>{isStartingGoogle ? "Opening Google" : "Sign in to sync"}</span>
+                  <LogIn aria-hidden="true" size={18} strokeWidth={2.3} />
+                </button>
+              ) : null}
               <button
                 className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-xs font-black text-[var(--app-text)] disabled:opacity-60"
                 disabled={isExportingData}
@@ -328,6 +351,11 @@ export function AppShell({ children }: AppShellProps) {
               {exportError ? (
                 <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-bold text-[var(--app-danger)]">
                   {exportError}
+                </p>
+              ) : null}
+              {authError ? (
+                <p className="rounded-[var(--app-radius-sm)] border border-[var(--app-danger)] bg-[var(--app-danger-soft)] p-3 text-sm font-bold text-[var(--app-danger)]" role="alert">
+                  {authError}
                 </p>
               ) : null}
             </div>
