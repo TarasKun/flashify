@@ -44,8 +44,33 @@ export class JwksSupabaseTokenVerifier implements SupabaseTokenVerifier {
     }
 
     return {
+      avatarUrl: readUserMetadataValue(
+        payload.user_metadata,
+        "avatar_url",
+        "picture",
+      ),
+      displayName: readUserMetadataValue(payload.user_metadata, "full_name", "name"),
       email: typeof payload.email === "string" ? payload.email : null,
       userId: payload.sub,
     };
   }
+}
+
+function readUserMetadataValue(
+  metadata: unknown,
+  ...keys: string[]
+): string | null {
+  if (typeof metadata !== "object" || metadata === null) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = (metadata as Record<string, unknown>)[key];
+
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  return null;
 }

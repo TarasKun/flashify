@@ -53,7 +53,10 @@ the checkpoint or relevant verification and report results.
   - NestJS now verifies bearer tokens through the configured Supabase JWKS,
     validates issuer/audience/expiry, and exposes only a typed verified
     principal to protected handlers. Unit and HTTP integration checks pass.
-- [ ] Task 19: Add current-user/device bootstrap endpoint.
+- [x] Task 19: Add current-user/device bootstrap endpoint.
+  - `POST /v1/auth/bootstrap` upserts a verified user and owned device without
+    accepting a user ID from the client. PostgreSQL integration checks cover
+    idempotency, profile refresh, and cross-account device rejection.
 
 ## Phase F: Protected Cloud CRUD
 

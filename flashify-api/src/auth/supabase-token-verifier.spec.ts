@@ -17,6 +17,8 @@ describe("JwksSupabaseTokenVerifier", () => {
     const verifier = new JwksSupabaseTokenVerifier(SUPABASE_URL, signer.keySet);
 
     await expect(verifier.verify(await signer.sign())).resolves.toEqual({
+      avatarUrl: null,
+      displayName: null,
       email: "learner@example.com",
       userId: "user-123",
     });

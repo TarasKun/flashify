@@ -4,6 +4,7 @@ import { loadApiConfig } from "./api-config.js";
 describe("API configuration", () => {
   it("uses safe local defaults", () => {
     expect(loadApiConfig({})).toEqual({
+      databaseUrl: "postgresql://postgres:postgres@127.0.0.1:54322/postgres?schema=public",
       environment: "development",
       port: 4000,
       supabaseUrl: "http://127.0.0.1:54321",

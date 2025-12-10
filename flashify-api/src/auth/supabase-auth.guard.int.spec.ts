@@ -49,6 +49,8 @@ describe("SupabaseAuthGuard", () => {
     });
 
     await expect(response.json()).resolves.toEqual({
+      avatarUrl: null,
+      displayName: null,
       email: "learner@example.com",
       userId: "user-123",
     });
