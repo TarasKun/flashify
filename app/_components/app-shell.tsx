@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Download,
   LogIn,
+  LogOut,
   Plus,
   Settings,
   Upload,
@@ -48,8 +49,14 @@ export function AppShell({ children }: AppShellProps) {
 function AppShellContent({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { errorMessage: authError, isStartingGoogle, startGoogleSignIn, status: authStatus } =
-    useFlashifyAuth();
+  const {
+    errorMessage: authError,
+    isSigningOut,
+    isStartingGoogle,
+    signOut,
+    startGoogleSignIn,
+    status: authStatus,
+  } = useFlashifyAuth();
   const storage = useMemo(() => createIndexedDbStorage(), []);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDeckMenuOpen, setIsDeckMenuOpen] = useState(false);
@@ -323,6 +330,17 @@ function AppShellContent({ children }: AppShellProps) {
                 >
                   <span>{isStartingGoogle ? "Opening Google" : "Sign in to sync"}</span>
                   <LogIn aria-hidden="true" size={18} strokeWidth={2.3} />
+                </button>
+              ) : null}
+              {authStatus === "signed-in" ? (
+                <button
+                  className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-xs font-black text-[var(--app-text)] disabled:opacity-60"
+                  disabled={isSigningOut}
+                  onClick={() => void signOut()}
+                  type="button"
+                >
+                  <span>{isSigningOut ? "Signing out" : "Log out"}</span>
+                  <LogOut aria-hidden="true" size={18} strokeWidth={2.3} />
                 </button>
               ) : null}
               <button

@@ -26,6 +26,8 @@ type AuthStatus = "guest" | "ready" | "restoring" | "signed-in";
 type AuthContextValue = {
   errorMessage: string;
   isStartingGoogle: boolean;
+  isSigningOut: boolean;
+  signOut: () => Promise<void>;
   startGoogleSignIn: () => Promise<void>;
   status: AuthStatus;
 };
@@ -37,6 +39,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const [status, setStatus] = useState<AuthStatus>("restoring");
   const [errorMessage, setErrorMessage] = useState("");
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -113,14 +116,37 @@ export function AuthGate({ children }: AuthGateProps) {
     }
   }, [isStartingGoogle, supabase]);
 
+  const signOut = useCallback(async () => {
+    if (!supabase || isSigningOut) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsSigningOut(true);
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      setErrorMessage("Could not sign out. Please try again.");
+      setIsSigningOut(false);
+      return;
+    }
+
+    window.localStorage.removeItem(GUEST_IDENTITY_STORAGE_KEY);
+    setStatus("ready");
+    setIsSigningOut(false);
+  }, [isSigningOut, supabase]);
+
   const contextValue = useMemo<AuthContextValue>(
     () => ({
       errorMessage,
       isStartingGoogle,
+      isSigningOut,
+      signOut,
       startGoogleSignIn: continueWithGoogle,
       status,
     }),
-    [continueWithGoogle, errorMessage, isStartingGoogle, status],
+    [continueWithGoogle, errorMessage, isSigningOut, signOut, isStartingGoogle, status],
   );
 
   if (status === "restoring") {
