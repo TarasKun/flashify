@@ -332,7 +332,7 @@ function AppShellContent({ children }: AppShellProps) {
                   <LogIn aria-hidden="true" size={18} strokeWidth={2.3} />
                 </button>
               ) : null}
-              {authStatus === "signed-in" ? (
+              {authStatus === "guest" || authStatus === "signed-in" ? (
                 <button
                   className="flex h-12 items-center justify-between rounded-[var(--app-radius-sm)] bg-[var(--app-surface-muted)] px-4 text-left text-xs font-black text-[var(--app-text)] disabled:opacity-60"
                   disabled={isSigningOut}

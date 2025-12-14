@@ -117,12 +117,19 @@ export function AuthGate({ children }: AuthGateProps) {
   }, [isStartingGoogle, supabase]);
 
   const signOut = useCallback(async () => {
-    if (!supabase || isSigningOut) {
+    if (isSigningOut) {
       return;
     }
 
     setErrorMessage("");
     setIsSigningOut(true);
+
+    if (!supabase) {
+      window.localStorage.removeItem(GUEST_IDENTITY_STORAGE_KEY);
+      setStatus("ready");
+      setIsSigningOut(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signOut();
 
